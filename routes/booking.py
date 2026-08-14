@@ -5,30 +5,28 @@ from database import get_db_connection
 import email_service
 import stripe
 import os
-import sqlite3
+import psycopg2
 
 booking_bp = Blueprint(
     "booking",
     __name__,
     url_prefix="/api"
 )
+
 # ---------------------------------------------------------
 # Helpers
 # ---------------------------------------------------------
 
 def dict_row(row):
-    """Convert sqlite3.Row or tuple into a dict."""
-    if isinstance(row, sqlite3.Row):
-        return dict(row)
-    return row
+    """Convert psycopg2 row (tuple) into dict using cursor.description."""
+    if row is None:
+        return None
+    return {desc[0]: row[i] for i, desc in enumerate(row)}
 
 def safe_price_to_cents(price_str):
     """Convert '$50' or '50' or '50.00' into cents."""
-    try:
-        cleaned = price_str.replace("$", "").strip()
-        return int(float(cleaned) * 100)
-    except Exception:
-        raise ValueError("Invalid price format")
+    cleaned = price_str.replace("$", "").strip()
+    return int(float(cleaned) * 100)
 
 def first_nonempty(d, *keys):
     """Return first non-empty value from multiple possible keys."""
@@ -39,9 +37,7 @@ def first_nonempty(d, *keys):
     return None
 
 def get_conn():
-    conn = get_db_connection()
-    conn.row_factory = sqlite3.Row
-    return conn
+    return get_db_connection()
 
 # ---------------------------------------------------------
 # DEBUG ROUTES
@@ -101,8 +97,8 @@ def create_booking():
         cursor.execute(
             """
             SELECT id FROM bookings
-            WHERE lesson_date = ?
-            AND lesson_time = ?
+            WHERE lesson_date = %s
+            AND lesson_time = %s
             AND status IN ('pending','confirmed')
             """,
             (lesson_date, lesson_time)
@@ -114,7 +110,7 @@ def create_booking():
                 "error": "This time is already reserved. Please choose another time."
             }), 409
 
-        # Insert booking
+        # Insert booking (PostgreSQL)
         cursor.execute(
             """
             INSERT INTO bookings
@@ -124,7 +120,8 @@ def create_booking():
                 lesson_date, lesson_time,
                 payment_method, payment_status, status
             )
-            VALUES (?,?,?,?,?,?,?,?,?,?,?)
+            VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)
+            RETURNING id
             """,
             (
                 name, email, phone,
@@ -134,14 +131,14 @@ def create_booking():
             )
         )
 
-        booking_id = cursor.lastrowid
+        booking_id = cursor.fetchone()[0]
         conn.commit()
 
         # Fetch booking
-        cursor.execute("SELECT * FROM bookings WHERE id = ?", (booking_id,))
+        cursor.execute("SELECT * FROM bookings WHERE id = %s", (booking_id,))
         booking = dict_row(cursor.fetchone())
 
-        # Send emails (non-blocking)
+        # Send emails
         try:
             email_service.send_booking_confirmation(
                 customer_email=booking["email"],
@@ -158,7 +155,6 @@ def create_booking():
 
         except Exception as e:
             print("EMAIL FAILED:", repr(e))
-
 
         return jsonify({
             "success": True,
@@ -199,7 +195,7 @@ def get_bookings():
     return jsonify([
         {
             "title": "Booked",
-            "start": f"{row['lesson_date']}T{row['lesson_time']}"
+            "start": f"{row[0]}T{row[1]}"
         }
         for row in rows
     ])
@@ -226,8 +222,8 @@ def booked_slots():
 
     return jsonify([
         {
-            "date": row["lesson_date"],
-            "time": row["lesson_time"]
+            "date": row[0],
+            "time": row[1]
         }
         for row in rows
     ])
@@ -250,14 +246,14 @@ def approve_booking():
     conn = get_conn()
     cursor = conn.cursor()
 
-    cursor.execute("SELECT * FROM bookings WHERE id = ?", (booking_id,))
+    cursor.execute("SELECT * FROM bookings WHERE id = %s", (booking_id,))
     booking = cursor.fetchone()
 
     if not booking:
         conn.close()
         return "Booking not found."
 
-    cursor.execute("UPDATE bookings SET status = 'confirmed' WHERE id = ?", (booking_id,))
+    cursor.execute("UPDATE bookings SET status = 'confirmed' WHERE id = %s", (booking_id,))
     conn.commit()
     conn.close()
 
@@ -279,14 +275,14 @@ def reject_booking():
     conn = get_conn()
     cursor = conn.cursor()
 
-    cursor.execute("SELECT * FROM bookings WHERE id = ?", (booking_id,))
+    cursor.execute("SELECT * FROM bookings WHERE id = %s", (booking_id,))
     booking = cursor.fetchone()
 
     if not booking:
         conn.close()
         return "Booking not found."
 
-    cursor.execute("UPDATE bookings SET status = 'rejected' WHERE id = ?", (booking_id,))
+    cursor.execute("UPDATE bookings SET status = 'rejected' WHERE id = %s", (booking_id,))
     conn.commit()
     conn.close()
 
@@ -308,17 +304,14 @@ def pay_now():
     conn = get_conn()
     cursor = conn.cursor()
 
-    cursor.execute("SELECT * FROM bookings WHERE id = ?", (booking_id,))
+    cursor.execute("SELECT * FROM bookings WHERE id = %s", (booking_id,))
     booking = dict_row(cursor.fetchone())
     conn.close()
 
     if not booking:
         return "Booking not found."
 
-    try:
-        price_cents = safe_price_to_cents(booking["price"])
-    except ValueError:
-        return "Invalid price format."
+    price_cents = safe_price_to_cents(booking["price"])
 
     session = stripe.checkout.Session.create(
         mode="payment",

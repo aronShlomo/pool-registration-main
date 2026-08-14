@@ -1,23 +1,18 @@
-import sqlite3
-from config import Config
-from datetime import datetime, timedelta
+import psycopg2
+import psycopg2.extras
 import os
-
-
-DATABASE = Config.DATABASE
-
+from datetime import datetime, timedelta
 
 # ==========================
 # DATABASE CONNECTION
 # ==========================
 
 def get_db_connection():
-    conn = sqlite3.connect(DATABASE, check_same_thread=False)
-    conn.row_factory = sqlite3.Row
+    url = os.getenv("DATABASE_URL")
+    if not url:
+        raise Exception("DATABASE_URL is missing in environment variables.")
+    conn = psycopg2.connect(url, sslmode="require")
     return conn
-
-
-print("DB PATH:", os.path.abspath(DATABASE))
 
 
 # ==========================
@@ -30,14 +25,14 @@ def remove_expired_pending_bookings():
 
     expired_time = (
         datetime.now() - timedelta(minutes=30)
-    ).strftime("%Y-%m-%d %H:%M:%S")
+    )
 
     cursor.execute(
         """
         DELETE FROM bookings
         WHERE status = 'pending'
         AND payment_status = 'pending'
-        AND created_at < ?
+        AND created_at < %s
         """,
         (expired_time,)
     )
@@ -47,56 +42,33 @@ def remove_expired_pending_bookings():
 
 
 # ==========================
-# INITIALIZE DATABASE
+# INITIALIZE DATABASE (POSTGRESQL)
 # ==========================
 
 def init_database():
     conn = get_db_connection()
     cursor = conn.cursor()
 
-    # Base schema
-    cursor.execute(
-        """
+    # Create table if not exists
+    cursor.execute("""
         CREATE TABLE IF NOT EXISTS bookings (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            name TEXT NOT NULL,
-            email TEXT NOT NULL,
-            phone TEXT,
-            lesson_type TEXT NOT NULL,
-            package TEXT NOT NULL,
-            lesson_date TEXT NOT NULL,
-            lesson_time TEXT NOT NULL,
-            price TEXT,
-            payment_method TEXT DEFAULT 'none',
-            payment_status TEXT DEFAULT 'pending',
-            stripe_payment_id TEXT,
-            status TEXT DEFAULT 'pending',
-            reminder_sent INTEGER DEFAULT 0,
+            id SERIAL PRIMARY KEY,
+            name VARCHAR(255) NOT NULL,
+            email VARCHAR(255) NOT NULL,
+            phone VARCHAR(50),
+            lesson_type VARCHAR(255) NOT NULL,
+            package VARCHAR(255) NOT NULL,
+            lesson_date VARCHAR(50) NOT NULL,
+            lesson_time VARCHAR(50) NOT NULL,
+            price VARCHAR(50),
+            payment_method VARCHAR(50) DEFAULT 'none',
+            payment_status VARCHAR(50) DEFAULT 'pending',
+            stripe_payment_id VARCHAR(255),
+            status VARCHAR(50) DEFAULT 'pending',
+            reminder_sent BOOLEAN DEFAULT FALSE,
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-        )
-        """
-    )
-
-    # Check existing columns
-    cursor.execute("PRAGMA table_info(bookings)")
-    existing_columns = [column[1] for column in cursor.fetchall()]
-
-    # Safe migrations
-    migrations = {
-        "payment_method": "TEXT DEFAULT 'none'",
-        "payment_status": "TEXT DEFAULT 'pending'",
-        "stripe_payment_id": "TEXT",
-        "status": "TEXT DEFAULT 'pending'",
-        "reminder_sent": "INTEGER DEFAULT 0",
-        "price": "TEXT"
-    }
-
-    for column, definition in migrations.items():
-        if column not in existing_columns:
-            cursor.execute(
-                f"ALTER TABLE bookings ADD COLUMN {column} {definition}"
-            )
-            print(f"Added column: {column}")
+        );
+    """)
 
     conn.commit()
     conn.close()
@@ -109,4 +81,4 @@ def init_database():
 def init_db():
     """Compatibility wrapper for older code."""
     init_database()
-    print("Database initialized.")
+    print("PostgreSQL database initialized.")
