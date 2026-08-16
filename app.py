@@ -14,8 +14,7 @@ from database import remove_expired_pending_bookings
 from apscheduler.schedulers.background import BackgroundScheduler
 from reminder_service import send_lesson_reminders
 
-from database import init_database
-init_database()
+
 
 
 
@@ -121,3 +120,7 @@ if __name__ == "__main__":
         port=port,
         debug=True
     )
+
+
+from database import init_database
+init_database()
