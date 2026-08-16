@@ -3,6 +3,7 @@ import psycopg2.extras
 import os
 from datetime import datetime, timedelta
 
+
 # ==========================
 # DATABASE CONNECTION
 # ==========================
@@ -23,9 +24,7 @@ def remove_expired_pending_bookings():
     conn = get_db_connection()
     cursor = conn.cursor()
 
-    expired_time = (
-        datetime.now() - timedelta(minutes=30)
-    )
+    expired_time = datetime.now() - timedelta(minutes=30)
 
     cursor.execute(
         """
@@ -42,14 +41,45 @@ def remove_expired_pending_bookings():
 
 
 # ==========================
-# INITIALIZE DATABASE (POSTGRESQL)
+# INSERT BOOKING (FIXED)
+# ==========================
+
+def insert_booking(data):
+    conn = get_db_connection()
+    cursor = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
+
+    cursor.execute(
+        """
+        INSERT INTO bookings (
+            name, email, phone, lesson_type, package,
+            lesson_date, lesson_time, price,
+            payment_method, payment_status, stripe_payment_id, status
+        )
+        VALUES (
+            %(name)s, %(email)s, %(phone)s, %(lesson_type)s, %(package)s,
+            %(lesson_date)s, %(lesson_time)s, %(price)s,
+            %(payment_method)s, %(payment_status)s, %(stripe_payment_id)s, %(status)s
+        )
+        RETURNING *;
+        """,
+        data
+    )
+
+    booking = cursor.fetchone()
+    conn.commit()
+    conn.close()
+
+    return booking   # <-- returns a dict, NOT an int
+
+
+# ==========================
+# INITIALIZE DATABASE
 # ==========================
 
 def init_database():
     conn = get_db_connection()
     cursor = conn.cursor()
 
-    # Create table if not exists
     cursor.execute("""
         CREATE TABLE IF NOT EXISTS bookings (
             id SERIAL PRIMARY KEY,
@@ -79,6 +109,5 @@ def init_database():
 # ==========================
 
 def init_db():
-    """Compatibility wrapper for older code."""
     init_database()
     print("PostgreSQL database initialized.")

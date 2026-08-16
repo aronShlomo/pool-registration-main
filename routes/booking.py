@@ -5,7 +5,7 @@ from database import get_db_connection
 import email_service
 import stripe
 import os
-import psycopg2
+import psycopg2.extras
 
 booking_bp = Blueprint(
     "booking",
@@ -17,39 +17,20 @@ booking_bp = Blueprint(
 # Helpers
 # ---------------------------------------------------------
 
-def dict_row(row):
-    """Convert psycopg2 row (tuple) into dict using cursor.description."""
-    if row is None:
-        return None
-    return {desc[0]: row[i] for i, desc in enumerate(row)}
-
-def safe_price_to_cents(price_str):
-    """Convert '$50' or '50' or '50.00' into cents."""
-    cleaned = price_str.replace("$", "").strip()
-    return int(float(cleaned) * 100)
-
 def first_nonempty(d, *keys):
-    """Return first non-empty value from multiple possible keys."""
     for k in keys:
         v = d.get(k)
         if v is not None and str(v).strip() != "":
             return str(v).strip()
     return None
 
+def safe_price_to_cents(price_str):
+    cleaned = price_str.replace("$", "").strip()
+    return int(float(cleaned) * 100)
+
 def get_conn():
     return get_db_connection()
 
-# ---------------------------------------------------------
-# DEBUG ROUTES
-# ---------------------------------------------------------
-
-@booking_bp.route("/debug")
-def debug():
-    return "Booking blueprint is loaded!"
-
-@booking_bp.route("/debug-approve")
-def debug_approve():
-    return "Approve route is registered!"
 
 # ---------------------------------------------------------
 # CREATE BOOKING
@@ -64,15 +45,27 @@ def create_booking():
         if not data:
             return jsonify({"success": False, "error": "No booking data received"}), 400
 
-        # Extract fields
-        lesson_date = first_nonempty(data, "lesson_date", "date", "lessonDate")
-        lesson_time = first_nonempty(data, "lesson_time", "time", "lessonTime")
+        # Extract fields (expanded to match frontend)
+        lesson_date = first_nonempty(data, "lesson_date", "date", "lessonDate", "selectedDate")
+        lesson_time = first_nonempty(data, "lesson_time", "time", "lessonTime", "selectedTime")
         name = first_nonempty(data, "name", "full_name", "student_name", "first_name")
         email = first_nonempty(data, "email", "email_address")
         phone = first_nonempty(data, "phone", "phone_number")
-        lesson_type = first_nonempty(data, "lesson_type", "lessonType")
+
+        # FIXED: accept all lesson_type variations
+        lesson_type = first_nonempty(
+            data,
+            "lesson_type",
+            "lessonType",
+            "lesson",
+            "selectedLesson",
+            "type"
+        )
+
+        # FIXED: accept all price variations
+        price = first_nonempty(data, "price", "amount", "lesson_price")
+
         package = first_nonempty(data, "package", "package_type")
-        price = first_nonempty(data, "price")
 
         required = {
             "name": name,
@@ -85,13 +78,12 @@ def create_booking():
             "lesson_time": lesson_time
         }
 
-        # Validate required fields
         for key, value in required.items():
             if not value:
                 return jsonify({"success": False, "error": f"Missing {key}"}), 400
 
         conn = get_conn()
-        cursor = conn.cursor()
+        cursor = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
 
         # Check slot availability
         cursor.execute(
@@ -110,7 +102,7 @@ def create_booking():
                 "error": "This time is already reserved. Please choose another time."
             }), 409
 
-        # Insert booking (PostgreSQL)
+        # Insert booking
         cursor.execute(
             """
             INSERT INTO bookings
@@ -121,7 +113,7 @@ def create_booking():
                 payment_method, payment_status, status
             )
             VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)
-            RETURNING id
+            RETURNING *
             """,
             (
                 name, email, phone,
@@ -131,12 +123,8 @@ def create_booking():
             )
         )
 
-        booking_id = cursor.fetchone()[0]
+        booking = cursor.fetchone()
         conn.commit()
-
-        # Fetch booking
-        cursor.execute("SELECT * FROM bookings WHERE id = %s", (booking_id,))
-        booking = dict_row(cursor.fetchone())
 
         # Send emails
         try:
@@ -158,7 +146,7 @@ def create_booking():
 
         return jsonify({
             "success": True,
-            "booking_id": booking_id,
+            "booking_id": booking["id"],
             "message": "Lesson reserved successfully! Please pay Cash or Zelle when you arrive."
         })
 
@@ -172,6 +160,7 @@ def create_booking():
         if conn:
             conn.close()
 
+
 # ---------------------------------------------------------
 # CALENDAR BOOKINGS
 # ---------------------------------------------------------
@@ -179,7 +168,7 @@ def create_booking():
 @booking_bp.route("/bookings")
 def get_bookings():
     conn = get_conn()
-    cursor = conn.cursor()
+    cursor = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
 
     cursor.execute(
         """
@@ -195,10 +184,11 @@ def get_bookings():
     return jsonify([
         {
             "title": "Booked",
-            "start": f"{row[0]}T{row[1]}"
+            "start": f"{row['lesson_date']}T{row['lesson_time']}"
         }
         for row in rows
     ])
+
 
 # ---------------------------------------------------------
 # BOOKED SLOTS
@@ -207,7 +197,7 @@ def get_bookings():
 @booking_bp.route("/booked-slots")
 def booked_slots():
     conn = get_conn()
-    cursor = conn.cursor()
+    cursor = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
 
     cursor.execute(
         """
@@ -222,11 +212,12 @@ def booked_slots():
 
     return jsonify([
         {
-            "date": row[0],
-            "time": row[1]
+            "date": row["lesson_date"],
+            "time": row["lesson_time"]
         }
         for row in rows
     ])
+
 
 # ---------------------------------------------------------
 # OWNER APPROVES BOOKING
@@ -244,7 +235,7 @@ def approve_booking():
         return "Invalid booking_id."
 
     conn = get_conn()
-    cursor = conn.cursor()
+    cursor = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
 
     cursor.execute("SELECT * FROM bookings WHERE id = %s", (booking_id,))
     booking = cursor.fetchone()
@@ -257,9 +248,10 @@ def approve_booking():
     conn.commit()
     conn.close()
 
-    email_service.send_user_approved_email(dict_row(booking))
+    email_service.send_user_approved_email(booking)
 
     return "<h2>Booking Approved ✔</h2><p>The user has been notified.</p>"
+
 
 # ---------------------------------------------------------
 # OWNER REJECTS BOOKING
@@ -273,7 +265,7 @@ def reject_booking():
         return "Invalid booking_id."
 
     conn = get_conn()
-    cursor = conn.cursor()
+    cursor = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
 
     cursor.execute("SELECT * FROM bookings WHERE id = %s", (booking_id,))
     booking = cursor.fetchone()
@@ -286,9 +278,10 @@ def reject_booking():
     conn.commit()
     conn.close()
 
-    email_service.send_user_rejected_email(dict_row(booking))
+    email_service.send_user_rejected_email(booking)
 
     return "<h2>Booking Rejected ✖</h2>"
+
 
 # ---------------------------------------------------------
 # PAY NOW (STRIPE)
@@ -302,10 +295,10 @@ def pay_now():
         return "Invalid booking_id."
 
     conn = get_conn()
-    cursor = conn.cursor()
+    cursor = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
 
     cursor.execute("SELECT * FROM bookings WHERE id = %s", (booking_id,))
-    booking = dict_row(cursor.fetchone())
+    booking = cursor.fetchone()
     conn.close()
 
     if not booking:
@@ -332,6 +325,7 @@ def pay_now():
     )
 
     return redirect(session.url)
+
 
 # ---------------------------------------------------------
 # PAY LATER
