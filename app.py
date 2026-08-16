@@ -4,18 +4,19 @@ import stripe
 from flask import Flask, render_template, jsonify
 
 from config import Config
-from database import init_database
 
+# PostgreSQL initializer
+from database import init_db, remove_expired_pending_bookings
+
+# Blueprints
 from routes.payment import payment_bp
 from routes.booking import booking_bp
 from routes.stripe_webhook import webhook_bp
 from routes.admin import admin_bp
-from database import remove_expired_pending_bookings
+
+# Scheduler
 from apscheduler.schedulers.background import BackgroundScheduler
 from reminder_service import send_lesson_reminders
-
-
-
 
 
 # ==========================
@@ -24,7 +25,7 @@ from reminder_service import send_lesson_reminders
 
 app = Flask(
     __name__,
-    template_folder="templates",          # <-- REQUIRED for approval email templates
+    template_folder="templates",
     static_folder="static"
 )
 
@@ -32,17 +33,22 @@ app.config.from_object(Config)
 app.config["SECRET_KEY"] = Config.SECRET_KEY
 
 
-# Stripe
+# ==========================
+# STRIPE
+# ==========================
+
 stripe.api_key = Config.STRIPE_SECRET_KEY
 
+
+# ==========================
+# DATABASE INIT
+# ==========================
+
+# Remove expired pending bookings on startup
 remove_expired_pending_bookings()
 
-
-# ==========================
-# DATABASE
-# ==========================
-
-init_database()
+# Initialize PostgreSQL database + create tables
+init_db()
 
 
 # ==========================
@@ -58,6 +64,7 @@ scheduler.add_job(
     minute=0
 )
 
+# Prevent scheduler from running twice in debug mode
 if not app.debug or os.environ.get("WERKZEUG_RUN_MAIN") == "true":
     scheduler.start()
 
@@ -67,13 +74,13 @@ if not app.debug or os.environ.get("WERKZEUG_RUN_MAIN") == "true":
 # ==========================
 
 app.register_blueprint(payment_bp)
-app.register_blueprint(booking_bp)        # <-- booking_bp now includes approve/reject/pay-now/pay-later
+app.register_blueprint(booking_bp)
 app.register_blueprint(webhook_bp)
 app.register_blueprint(admin_bp)
 
 
 # ==========================
-# HOME
+# ROUTES
 # ==========================
 
 @app.route("/")
@@ -95,7 +102,7 @@ def health():
 
 
 # ==========================
-# ERRORS
+# ERROR HANDLERS
 # ==========================
 
 @app.errorhandler(404)
@@ -109,18 +116,13 @@ def server_error(error):
 
 
 # ==========================
-# RUN
+# RUN (LOCAL ONLY)
 # ==========================
 
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))
-
     app.run(
         host="0.0.0.0",
         port=port,
         debug=True
     )
-
-
-from database import init_database
-init_database()
