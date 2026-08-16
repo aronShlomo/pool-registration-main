@@ -4,19 +4,16 @@ import stripe
 from flask import Flask, render_template, jsonify
 
 from config import Config
+from database import init_db   # <-- ONLY init_db now
 
-# PostgreSQL initializer
-from database import init_db, remove_expired_pending_bookings
-
-# Blueprints
 from routes.payment import payment_bp
 from routes.booking import booking_bp
 from routes.stripe_webhook import webhook_bp
 from routes.admin import admin_bp
 
-# Scheduler
 from apscheduler.schedulers.background import BackgroundScheduler
 from reminder_service import send_lesson_reminders
+
 
 
 # ==========================
@@ -45,7 +42,6 @@ stripe.api_key = Config.STRIPE_SECRET_KEY
 # ==========================
 
 # Remove expired pending bookings on startup
-remove_expired_pending_bookings()
 
 # Initialize PostgreSQL database + create tables
 init_db()
