@@ -406,7 +406,7 @@ a {
       rgba(0, 119, 182, 0.78) 72%,
       rgba(0, 180, 216, 0.65) 100%
     ),
-    url("/static/images/hero.jpg") center center / cover no-repeat;
+    url("/static/images/about_pool.jpg") center center / cover no-repeat;
 
   transform: scale(1.02);
 }
