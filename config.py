@@ -108,8 +108,7 @@ class Config:
     DOMAIN = os.getenv(
         "DOMAIN",
         "http://127.0.0.1:5000"
-    ).rstrip("/")
-
+    ).strip().rstrip("/")
 
     # ========================================================
     # ENVIRONMENT
