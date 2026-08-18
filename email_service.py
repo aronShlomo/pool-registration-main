@@ -2230,3 +2230,18 @@ Professional Swimming Lessons
         html
     )    
     
+    
+# ============================================================
+# APPROVAL EMAIL COMPATIBILITY FUNCTION
+# ============================================================
+
+def send_booking_approved(booking):
+    """
+    Compatibility wrapper for the approval route.
+
+    The application approval route may call
+    send_booking_approved(), while the main customer
+    approval email function is send_user_approved_email().
+    """
+
+    return send_user_approved_email(booking)    
