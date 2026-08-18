@@ -31,6 +31,18 @@ booking_bp = Blueprint(
     url_prefix="/api"
 )
 
+# Email configuration diagnostics are intentionally kept out of the
+# browser response. They appear in Render/server logs only.
+print(
+    "BOOKING EMAIL CONFIG:",
+    {
+        "owner_email_configured": bool(Config.OWNER_EMAIL),
+        "resend_key_configured": bool(Config.RESEND_API_KEY),
+        "email_from_configured": bool(Config.EMAIL_FROM),
+        "domain_configured": bool(Config.DOMAIN),
+    }
+)
+
 
 # ============================================================
 # HELPERS
@@ -431,15 +443,52 @@ def create_booking():
         #
         # ----------------------------------------------------
 
+        # ----------------------------------------------------
+        # SEND OWNER NOTIFICATION
+        # ----------------------------------------------------
+        #
+        # IMPORTANT:
+        # Do NOT silently report success if the owner email fails.
+        # The previous version caught the email exception and still
+        # returned success to the customer, which made it look like
+        # everything worked even when Resend rejected the email.
+        #
+        # The booking is already committed, so if email delivery fails
+        # we keep the booking and return a clear server error. This
+        # prevents losing the registration while making the failure
+        # visible in the browser and Render logs.
+        # ----------------------------------------------------
+
         try:
 
-            email_service.send_admin_notification(
+            if not Config.OWNER_EMAIL:
+                raise RuntimeError(
+                    "OWNER_EMAIL is not configured."
+                )
+
+            if not Config.RESEND_API_KEY:
+                raise RuntimeError(
+                    "RESEND_API_KEY is not configured."
+                )
+
+            if not Config.EMAIL_FROM:
+                raise RuntimeError(
+                    "EMAIL_FROM is not configured."
+                )
+
+            email_result = email_service.send_admin_notification(
                 booking
             )
 
+            if not email_result:
+                raise RuntimeError(
+                    "Owner notification did not return a Resend response."
+                )
+
             print(
                 f"OWNER NOTIFICATION SENT "
-                f"FOR BOOKING #{booking['id']}"
+                f"FOR BOOKING #{booking['id']}: "
+                f"{email_result}"
             )
 
         except Exception as email_error:
@@ -449,8 +498,15 @@ def create_booking():
                 repr(email_error)
             )
 
-            # The booking itself was successfully saved.
-            # We don't delete it simply because email failed.
+            return jsonify({
+                "success": False,
+                "booking_id": booking["id"],
+                "error": (
+                    "Your registration was saved, but we could not "
+                    "send the approval email to the owner. "
+                    "Please contact the academy or try again later."
+                )
+            }), 500
 
 
         # ----------------------------------------------------
@@ -1022,3 +1078,4 @@ def reject_booking():
         if conn:
 
             conn.close()
+            

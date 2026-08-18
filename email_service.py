@@ -15,27 +15,34 @@ resend.api_key = Config.RESEND_API_KEY
 # ============================================================
 
 def send_email(to, subject, html):
-    """
-    Send an HTML email through Resend.
-    """
+    """Send one HTML email through Resend and return its response."""
 
     if not Config.RESEND_API_KEY:
-        raise RuntimeError(
-            "RESEND_API_KEY is not configured."
-        )
+        raise RuntimeError("RESEND_API_KEY is not configured.")
+
+    if not Config.EMAIL_FROM:
+        raise RuntimeError("EMAIL_FROM is not configured.")
+
+    if not to:
+        raise RuntimeError("Recipient email is missing.")
 
     params = {
         "from": Config.EMAIL_FROM,
-        "to": [to],
+        "to": [str(to).strip()],
         "subject": subject,
         "html": html
     }
 
+    print("========================================")
+    print("RESEND EMAIL SEND")
+    print("FROM:", Config.EMAIL_FROM)
+    print("TO:", str(to).strip())
+    print("SUBJECT:", subject)
+    print("========================================")
+
     response = resend.Emails.send(params)
 
-    print(
-        f"EMAIL SENT: {subject} -> {to}"
-    )
+    print("RESEND RESPONSE:", repr(response))
 
     return response
 
@@ -332,6 +339,14 @@ def send_admin_notification(booking):
         </body>
         </html>
         """
+
+        print("========================================")
+        print("OWNER APPROVAL EMAIL")
+        print("BOOKING ID:", booking_id)
+        print("OWNER EMAIL:", Config.OWNER_EMAIL)
+        print("APPROVAL TOKEN PRESENT:", bool(approval_token))
+        print("APPROVE URL:", approve_url)
+        print("========================================")
 
         return send_email(
             Config.OWNER_EMAIL,
@@ -1294,4 +1309,3 @@ def send_lesson_reminder(
         )
 
         return None    
-    
