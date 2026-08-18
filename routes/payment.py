@@ -1,7 +1,6 @@
 from flask import Blueprint, request, jsonify, redirect
 import stripe
 import threading
-
 import psycopg2.extras
 
 from config import Config
@@ -35,11 +34,9 @@ stripe.api_key = Config.STRIPE_SECRET_KEY
 # ============================================================
 
 def get_booking(booking_id):
-
     conn = None
 
     try:
-
         conn = get_db_connection()
 
         cursor = conn.cursor(
@@ -59,7 +56,6 @@ def get_booking(booking_id):
         return cursor.fetchone()
 
     finally:
-
         if conn:
             conn.close()
 
@@ -68,6 +64,11 @@ def send_email_background(
     booking,
     notify_owner=False
 ):
+    """
+    Send customer confirmation email in background.
+
+    If notify_owner=True, also notify the owner.
+    """
 
     def worker():
 
@@ -86,6 +87,11 @@ def send_email_background(
 
                 send_admin_notification(
                     booking
+                )
+
+                print(
+                    f"OWNER PAYMENT NOTIFICATION SENT "
+                    f"FOR BOOKING #{booking['id']}"
                 )
 
         except Exception as error:
@@ -136,14 +142,15 @@ def create_checkout_session():
 
             return jsonify({
                 "success": False,
-                "error": "No payment information was received."
+                "error": (
+                    "No payment information "
+                    "was received."
+                )
             }), 400
-
 
         booking_id = data.get(
             "booking_id"
         )
-
 
         if not booking_id:
 
@@ -152,11 +159,9 @@ def create_checkout_session():
                 "error": "Booking ID is missing."
             }), 400
 
-
         booking = get_booking(
             booking_id
         )
-
 
         if not booking:
 
@@ -165,24 +170,25 @@ def create_checkout_session():
                 "error": "Booking not found."
             }), 404
 
-
         if booking["status"] != "confirmed":
 
             return jsonify({
                 "success": False,
-                "error":
-                    "This booking has not been approved yet."
+                "error": (
+                    "This booking has not "
+                    "been approved yet."
+                )
             }), 400
-
 
         if booking["payment_status"] == "paid":
 
             return jsonify({
                 "success": False,
-                "error":
-                    "This booking has already been paid."
+                "error": (
+                    "This booking has "
+                    "already been paid."
+                )
             }), 400
-
 
         price = Config.LESSON_PRICES[
             booking["lesson_type"]
@@ -190,15 +196,15 @@ def create_checkout_session():
             booking["package"]
         ]
 
-
         if not price or price <= 0:
 
             return jsonify({
                 "success": False,
-                "error":
-                    "Unable to determine the booking price."
+                "error": (
+                    "Unable to determine "
+                    "the booking price."
+                )
             }), 400
-
 
         session = stripe.checkout.Session.create(
 
@@ -211,7 +217,6 @@ def create_checkout_session():
             customer_email=booking["email"],
 
             line_items=[
-
                 {
                     "price_data": {
 
@@ -234,16 +239,12 @@ def create_checkout_session():
                     },
 
                     "quantity": 1,
-
                 }
-
             ],
 
             metadata={
-
                 "booking_id":
                     str(booking_id)
-
             },
 
             success_url=(
@@ -256,9 +257,7 @@ def create_checkout_session():
                 f"{Config.DOMAIN}"
                 "/payment-cancel"
             )
-
         )
-
 
         return jsonify({
 
@@ -268,7 +267,6 @@ def create_checkout_session():
                 session.url
 
         })
-
 
     except stripe.error.StripeError as error:
 
@@ -280,7 +278,6 @@ def create_checkout_session():
                 stripe_error_message(error)
 
         }), 500
-
 
     except Exception as error:
 
@@ -301,52 +298,270 @@ def create_checkout_session():
 
 # ============================================================
 # PAY NOW
+#
+# SUPPORTS BOTH:
+#
+# /pay-now/25
+# /api/pay-now/25
+#
+# This prevents old approval emails from
+# producing a 404.
 # ============================================================
 
 @payment_bp.route(
     "/pay-now/<int:booking_id>",
     methods=["GET"]
 )
-def pay_now(
-    booking_id
-):
+@payment_bp.route(
+    "/api/pay-now/<int:booking_id>",
+    methods=["GET"]
+)
+def pay_now(booking_id):
 
     try:
+
+        print(
+            "========================================"
+        )
+
+        print(
+            "PAY NOW REQUEST"
+        )
+
+        print(
+            "BOOKING ID:",
+            booking_id
+        )
+
+        print(
+            "========================================"
+        )
 
         booking = get_booking(
             booking_id
         )
 
+        # ----------------------------------------------------
+        # BOOKING NOT FOUND
+        # ----------------------------------------------------
 
         if not booking:
 
+            print(
+                "PAY NOW: BOOKING NOT FOUND:",
+                booking_id
+            )
+
             return """
-            <h2>Booking Not Found</h2>
-            <p>
-                We could not find your swimming lesson booking.
-            </p>
+            <!DOCTYPE html>
+
+            <html>
+
+            <head>
+
+                <meta charset="UTF-8">
+
+                <meta
+                    name="viewport"
+                    content="width=device-width, initial-scale=1.0"
+                >
+
+                <title>Booking Not Found</title>
+
+            </head>
+
+            <body
+                style="
+                    font-family:Arial,sans-serif;
+                    background:#eef7fb;
+                    padding:40px 20px;
+                    text-align:center;
+                "
+            >
+
+                <div
+                    style="
+                        max-width:600px;
+                        margin:auto;
+                        background:white;
+                        padding:40px;
+                        border-radius:18px;
+                        box-shadow:0 10px 30px rgba(0,0,0,.08);
+                    "
+                >
+
+                    <div style="font-size:55px;">
+                        🏊
+                    </div>
+
+                    <h1 style="color:#023e8a;">
+                        Booking Not Found
+                    </h1>
+
+                    <p style="color:#555;">
+                        We could not find your
+                        swimming lesson booking.
+                    </p>
+
+                    <a
+                        href="/"
+                        style="
+                            display:inline-block;
+                            margin-top:20px;
+                            background:#0077b6;
+                            color:white;
+                            padding:14px 25px;
+                            border-radius:10px;
+                            text-decoration:none;
+                            font-weight:bold;
+                        "
+                    >
+                        Return to Millrod Swim Academy
+                    </a>
+
+                </div>
+
+            </body>
+
+            </html>
             """, 404
 
+        # ----------------------------------------------------
+        # BOOKING NOT APPROVED
+        # ----------------------------------------------------
 
         if booking["status"] != "confirmed":
 
             return """
-            <h2>Booking Not Approved</h2>
-            <p>
-                Your booking has not been approved yet.
-            </p>
+            <!DOCTYPE html>
+
+            <html>
+
+            <head>
+
+                <meta charset="UTF-8">
+
+                <meta
+                    name="viewport"
+                    content="width=device-width, initial-scale=1.0"
+                >
+
+                <title>Booking Not Approved</title>
+
+            </head>
+
+            <body
+                style="
+                    font-family:Arial,sans-serif;
+                    background:#eef7fb;
+                    padding:40px 20px;
+                    text-align:center;
+                "
+            >
+
+                <div
+                    style="
+                        max-width:600px;
+                        margin:auto;
+                        background:white;
+                        padding:40px;
+                        border-radius:18px;
+                        box-shadow:0 10px 30px rgba(0,0,0,.08);
+                    "
+                >
+
+                    <div style="font-size:55px;">
+                        ⏳
+                    </div>
+
+                    <h1 style="color:#023e8a;">
+                        Booking Not Approved
+                    </h1>
+
+                    <p style="color:#555;">
+                        Your swimming lesson has not
+                        been approved yet.
+                    </p>
+
+                    <p style="color:#555;">
+                        Please wait for the academy's
+                        approval email.
+                    </p>
+
+                </div>
+
+            </body>
+
+            </html>
             """, 400
 
+        # ----------------------------------------------------
+        # ALREADY PAID
+        # ----------------------------------------------------
 
         if booking["payment_status"] == "paid":
 
             return """
-            <h2>Payment Already Completed ✓</h2>
-            <p>
-                This swimming lesson has already been paid.
-            </p>
+            <!DOCTYPE html>
+
+            <html>
+
+            <head>
+
+                <meta charset="UTF-8">
+
+                <meta
+                    name="viewport"
+                    content="width=device-width, initial-scale=1.0"
+                >
+
+                <title>Payment Completed</title>
+
+            </head>
+
+            <body
+                style="
+                    font-family:Arial,sans-serif;
+                    background:#eef7fb;
+                    padding:40px 20px;
+                    text-align:center;
+                "
+            >
+
+                <div
+                    style="
+                        max-width:600px;
+                        margin:auto;
+                        background:white;
+                        padding:40px;
+                        border-radius:18px;
+                        box-shadow:0 10px 30px rgba(0,0,0,.08);
+                    "
+                >
+
+                    <div style="font-size:55px;">
+                        ✅
+                    </div>
+
+                    <h1 style="color:#16803c;">
+                        Payment Already Completed
+                    </h1>
+
+                    <p style="color:#555;">
+                        This swimming lesson has
+                        already been paid.
+                    </p>
+
+                </div>
+
+            </body>
+
+            </html>
             """, 200
 
+        # ----------------------------------------------------
+        # GET PRICE
+        # ----------------------------------------------------
 
         price = Config.LESSON_PRICES[
             booking["lesson_type"]
@@ -354,16 +569,20 @@ def pay_now(
             booking["package"]
         ]
 
-
         if not price or price <= 0:
 
             return """
             <h2>Payment Error</h2>
+
             <p>
-                We could not determine the price for this booking.
+                We could not determine the
+                price for this booking.
             </p>
             """, 400
 
+        # ----------------------------------------------------
+        # CREATE STRIPE CHECKOUT
+        # ----------------------------------------------------
 
         session = stripe.checkout.Session.create(
 
@@ -377,9 +596,7 @@ def pay_now(
                 booking["email"],
 
             line_items=[
-
                 {
-
                     "price_data": {
 
                         "currency":
@@ -403,14 +620,11 @@ def pay_now(
                     "quantity": 1,
 
                 }
-
             ],
 
             metadata={
-
                 "booking_id":
                     str(booking_id)
-
             },
 
             success_url=(
@@ -423,14 +637,20 @@ def pay_now(
                 f"{Config.DOMAIN}"
                 "/payment-cancel"
             )
-
         )
 
+        print(
+            "STRIPE CHECKOUT CREATED:",
+            session.id
+        )
+
+        # ----------------------------------------------------
+        # REDIRECT CUSTOMER TO STRIPE
+        # ----------------------------------------------------
 
         return redirect(
             session.url
         )
-
 
     except stripe.error.StripeError as error:
 
@@ -440,7 +660,6 @@ def pay_now(
         )
 
         return """
-
         <!DOCTYPE html>
 
         <html>
@@ -479,31 +698,22 @@ def pay_now(
                 "
             >
 
-                <div
-                    style="
-                        font-size:55px;
-                    "
-                >
+                <div style="font-size:55px;">
                     💳
                 </div>
 
-                <h1
-                    style="
-                        color:#023e8a;
-                    "
-                >
+                <h1 style="color:#023e8a;">
                     Payment Could Not Start
                 </h1>
 
-                <p
-                    style="
-                        color:#555;
-                        line-height:1.6;
-                    "
-                >
-                    We were unable to start your secure
-                    Stripe payment.
-                    Please try again.
+                <p style="color:#555;line-height:1.6;">
+                    We were unable to start your
+                    secure Stripe payment.
+                </p>
+
+                <p style="color:#555;line-height:1.6;">
+                    Please try again or contact
+                    Millrod Swim Academy.
                 </p>
 
                 <a
@@ -519,7 +729,7 @@ def pay_now(
                         font-weight:bold;
                     "
                 >
-                    Return to Millrod Swim Academy
+                    Return Home
                 </a>
 
             </div>
@@ -527,9 +737,7 @@ def pay_now(
         </body>
 
         </html>
-
         """, 500
-
 
     except Exception as error:
 
@@ -539,84 +747,112 @@ def pay_now(
         )
 
         return """
-
         <h2>Payment Error</h2>
 
         <p>
             We were unable to start your payment.
             Please try again.
         </p>
-
         """, 500
 
 
 # ============================================================
 # PAY LATER
+#
+# SUPPORTS BOTH:
+#
+# /pay-later/25
+# /api/pay-later/25
 # ============================================================
 
 @payment_bp.route(
     "/pay-later/<int:booking_id>",
     methods=["GET"]
 )
-def pay_later(
-    booking_id
-):
+@payment_bp.route(
+    "/api/pay-later/<int:booking_id>",
+    methods=["GET"]
+)
+def pay_later(booking_id):
 
     conn = None
 
     try:
 
+        print(
+            "========================================"
+        )
+
+        print(
+            "PAY LATER REQUEST"
+        )
+
+        print(
+            "BOOKING ID:",
+            booking_id
+        )
+
+        print(
+            "========================================"
+        )
+
         booking = get_booking(
             booking_id
         )
 
+        # ----------------------------------------------------
+        # BOOKING NOT FOUND
+        # ----------------------------------------------------
 
         if not booking:
 
             return """
-
             <h2>Booking Not Found</h2>
 
             <p>
-                We could not find your swimming lesson booking.
+                We could not find your
+                swimming lesson booking.
             </p>
-
             """, 404
 
+        # ----------------------------------------------------
+        # BOOKING NOT APPROVED
+        # ----------------------------------------------------
 
         if booking["status"] != "confirmed":
 
             return """
-
             <h2>Booking Not Approved</h2>
 
             <p>
-                Your lesson must be approved before selecting
-                Pay Later.
+                Your lesson must be approved
+                before selecting Pay Later.
             </p>
-
             """, 400
 
+        # ----------------------------------------------------
+        # ALREADY PAID
+        # ----------------------------------------------------
 
         if booking["payment_status"] == "paid":
 
             return """
-
             <h2>Payment Already Completed ✓</h2>
 
             <p>
                 This booking has already been paid.
             </p>
-
             """, 200
 
+        # ----------------------------------------------------
+        # UPDATE BOOKING
+        # ----------------------------------------------------
 
         conn = get_db_connection()
 
         cursor = conn.cursor(
             cursor_factory=psycopg2.extras.RealDictCursor
         )
-
 
         cursor.execute(
             """
@@ -636,40 +872,32 @@ def pay_later(
             )
         )
 
-
         booking = cursor.fetchone()
 
-
         conn.commit()
-
 
         conn.close()
 
         conn = None
 
-
         if not booking:
 
             return """
-
             <h2>Booking Error</h2>
 
             <p>
                 We could not update your booking.
             </p>
-
             """, 500
 
-
         # ----------------------------------------------------
-        # SEND EMAILS IN BACKGROUND
+        # SEND CUSTOMER + OWNER EMAILS
         # ----------------------------------------------------
 
         send_email_background(
             booking,
             notify_owner=True
         )
-
 
         # ----------------------------------------------------
         # PRICE
@@ -681,18 +909,15 @@ def pay_later(
             booking["package"]
         ]
 
-
         amount = (
             f"${price_cents / 100:.2f}"
         )
 
-
         # ----------------------------------------------------
-        # PAY LATER CONFIRMATION PAGE
+        # CONFIRMATION PAGE
         # ----------------------------------------------------
 
         return f"""
-
         <!DOCTYPE html>
 
         <html>
@@ -711,7 +936,6 @@ def pay_later(
             </title>
 
         </head>
-
 
         <body
             style="
@@ -770,18 +994,16 @@ def pay_later(
                         <h1
                             style="
                                 margin:10px 0 0;
-                                font-size:28px;
                             "
                         >
-                            Booking Confirmed!
+                            Pay Later Confirmed
                         </h1>
 
                         <p>
-                            Pay Later Selected
+                            Millrod Swim Academy
                         </p>
 
                     </div>
-
 
                     <div
                         style="
@@ -794,118 +1016,27 @@ def pay_later(
                                 color:#023e8a;
                             "
                         >
-                            Thank you,
-                            {booking['name']}! 👋
+                            Thank You!
                         </h2>
-
 
                         <p
                             style="
-                                font-size:16px;
                                 line-height:1.7;
                             "
                         >
-                            Your swimming lesson has been
-                            confirmed.
+                            Your booking is confirmed.
+                            You selected
+                            <strong>
+                                Pay Later
+                            </strong>.
                         </p>
 
-
                         <div
                             style="
-                                background:#f6fbfe;
-                                border:1px solid #dceef7;
-                                border-radius:15px;
-                                padding:24px;
-                                margin:25px 0;
-                            "
-                        >
-
-                            <h3
-                                style="
-                                    margin-top:0;
-                                    color:#023e8a;
-                                "
-                            >
-                                Lesson Details
-                            </h3>
-
-
-                            <p>
-                                <strong>
-                                    Student:
-                                </strong>
-
-                                {booking['name']}
-                            </p>
-
-
-                            <p>
-                                <strong>
-                                    Lesson:
-                                </strong>
-
-                                {booking['lesson_type']}
-                            </p>
-
-
-                            <p>
-                                <strong>
-                                    Package:
-                                </strong>
-
-                                {booking['package']}
-                            </p>
-
-
-                            <p>
-                                <strong>
-                                    Date:
-                                </strong>
-
-                                {booking['lesson_date']}
-                            </p>
-
-
-                            <p>
-                                <strong>
-                                    Time:
-                                </strong>
-
-                                {booking['lesson_time']}
-                            </p>
-
-
-                            <p
-                                style="
-                                    font-size:20px;
-                                    margin-bottom:0;
-                                "
-                            >
-                                <strong>
-                                    Amount Due:
-                                </strong>
-
-                                <span
-                                    style="
-                                        color:#0077b6;
-                                        font-weight:bold;
-                                    "
-                                >
-                                    {amount}
-                                </span>
-                            </p>
-
-                        </div>
-
-
-                        <div
-                            style="
-                                background:#fff8e8;
-                                border-left:
-                                    5px solid
-                                    #f4b400;
+                                background:#fffaf0;
+                                border:1px solid #f0d98c;
+                                border-radius:12px;
                                 padding:22px;
-                                border-radius:10px;
                                 margin:25px 0;
                             "
                         >
@@ -919,17 +1050,12 @@ def pay_later(
                                 🕒 Please Pay When You Arrive
                             </h3>
 
-
                             <p
                                 style="
                                     line-height:1.7;
                                     margin-bottom:0;
                                 "
                             >
-                                You selected
-                                <strong>
-                                    Pay Later
-                                </strong>.
 
                                 Please bring your payment
                                 when you arrive for your
@@ -941,10 +1067,10 @@ def pay_later(
                                     Amount to pay:
                                     {amount}
                                 </strong>
+
                             </p>
 
                         </div>
-
 
                         <div
                             style="
@@ -970,7 +1096,6 @@ def pay_later(
 
                         </div>
 
-
                         <p
                             style="
                                 text-align:center;
@@ -986,7 +1111,6 @@ def pay_later(
                         </p>
 
                     </div>
-
 
                     <div
                         style="
@@ -1015,9 +1139,7 @@ def pay_later(
         </body>
 
         </html>
-
         """
-
 
     except Exception as error:
 
@@ -1028,24 +1150,19 @@ def pay_later(
             except Exception:
                 pass
 
-
         print(
             "PAY LATER ERROR:",
             repr(error)
         )
 
-
         return """
-
         <h2>Unable to Process Pay Later</h2>
 
         <p>
             We could not update your payment selection.
             Please contact Millrod Swim Academy.
         </p>
-
         """, 500
-
 
     finally:
 
@@ -1067,61 +1184,50 @@ def payment_success():
         "session_id"
     )
 
-
     if not session_id:
 
         return """
-
         <h2>Invalid Payment</h2>
 
         <p>
-            No Stripe payment session was provided.
+            No Stripe payment session
+            was provided.
         </p>
-
         """, 400
-
 
     try:
 
         session = stripe.checkout.Session.retrieve(
-                session_id
-            )
-
+            session_id
+        )
 
         if session.payment_status != "paid":
 
             return """
-
             <h2>Payment Not Completed</h2>
 
             <p>
-                The Stripe payment was not completed.
+                The Stripe payment was
+                not completed.
             </p>
-
             """, 400
-
 
         metadata = session.metadata or {}
 
-
         booking_id = metadata.get(
-                "booking_id"
-            )
-
+            "booking_id"
+        )
 
         if not booking_id:
 
             return """
-
             <h2>Payment Error</h2>
 
             <p>
-                The payment was received but the booking
-                could not be identified.
+                The payment was received but
+                the booking could not be identified.
             </p>
-
             """, 500
-
 
         conn = get_db_connection()
 
@@ -1129,15 +1235,45 @@ def payment_success():
             cursor_factory=psycopg2.extras.RealDictCursor
         )
 
+        cursor.execute(
+            """
+            SELECT *
+            FROM bookings
+            WHERE id = %s
+            LIMIT 1
+            """,
+            (
+                booking_id,
+            )
+        )
+
+        booking = cursor.fetchone()
+
+        if not booking:
+
+            conn.close()
+
+            return """
+            <h2>Booking Not Found</h2>
+
+            <p>
+                The payment was received, but
+                the booking could not be found.
+            </p>
+            """, 404
+
+        # ----------------------------------------------------
+        # UPDATE PAYMENT STATUS
+        # ----------------------------------------------------
 
         cursor.execute(
             """
             UPDATE bookings
 
             SET
-                payment_method = 'card',
-                payment_status = 'paid',
                 status = 'confirmed',
+                payment_status = 'paid',
+                payment_method = 'stripe',
                 stripe_payment_id = %s
 
             WHERE id = %s
@@ -1150,37 +1286,26 @@ def payment_success():
             )
         )
 
-
         booking = cursor.fetchone()
-
 
         conn.commit()
 
         conn.close()
 
-
-        if not booking:
-
-            return """
-
-            <h2>Booking Not Found</h2>
-
-            <p>
-                The payment was completed, but the booking
-                could not be found.
-            </p>
-
-            """, 404
-
+        # ----------------------------------------------------
+        # SEND CONFIRMATION EMAILS
+        # ----------------------------------------------------
 
         send_email_background(
             booking,
             notify_owner=True
         )
 
+        # ----------------------------------------------------
+        # SUCCESS PAGE
+        # ----------------------------------------------------
 
-        return """
-
+        return f"""
         <!DOCTYPE html>
 
         <html>
@@ -1225,15 +1350,15 @@ def payment_success():
 
                 <div
                     style="
-                        font-size:60px;
+                        font-size:65px;
                     "
                 >
-                    ✓
+                    ✅
                 </div>
 
                 <h1
                     style="
-                        color:#198754;
+                        color:#16803c;
                     "
                 >
                     Payment Successful!
@@ -1241,13 +1366,36 @@ def payment_success():
 
                 <p
                     style="
-                        font-size:17px;
-                        line-height:1.6;
+                        color:#555;
+                        line-height:1.7;
+                    "
+                >
+                    Thank you!
+
+                    Your swimming lesson
+                    payment has been received
+                    successfully.
+                </p>
+
+                <p
+                    style="
                         color:#555;
                     "
                 >
-                    Your payment has been received and
-                    your swimming lesson is confirmed.
+                    Booking ID:
+                    <strong>
+                        #{booking_id}
+                    </strong>
+                </p>
+
+                <p
+                    style="
+                        color:#555;
+                        line-height:1.6;
+                    "
+                >
+                    A confirmation email
+                    has been sent to you.
                 </p>
 
                 <a
@@ -1271,9 +1419,7 @@ def payment_success():
         </body>
 
         </html>
-
         """
-
 
     except Exception as error:
 
@@ -1282,9 +1428,7 @@ def payment_success():
             repr(error)
         )
 
-
         return """
-
         <h2>Payment Processing Error</h2>
 
         <p>
@@ -1292,7 +1436,6 @@ def payment_success():
             Please contact Millrod Swim Academy
             before attempting another payment.
         </p>
-
         """, 500
 
 
@@ -1306,7 +1449,6 @@ def payment_success():
 def payment_cancel():
 
     return """
-
     <!DOCTYPE html>
 
     <html>
@@ -1325,7 +1467,6 @@ def payment_cancel():
         </title>
 
     </head>
-
 
     <body
         style="
@@ -1358,7 +1499,6 @@ def payment_cancel():
                 💳
             </div>
 
-
             <h1
                 style="
                     color:#023e8a;
@@ -1367,7 +1507,6 @@ def payment_cancel():
                 Payment Cancelled
             </h1>
 
-
             <p
                 style="
                     color:#555;
@@ -1375,9 +1514,10 @@ def payment_cancel():
                 "
             >
                 Your payment was cancelled.
-                Your booking has not been marked as paid.
-            </p>
 
+                Your booking has not been
+                marked as paid.
+            </p>
 
             <a
                 href="/"
@@ -1400,5 +1540,4 @@ def payment_cancel():
     </body>
 
     </html>
-
     """
