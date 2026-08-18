@@ -1,22 +1,26 @@
-# ============================================================
-# MILLROD SWIM ACADEMY
-# BOOKING ROUTES
-# ============================================================
+print("Booking blueprint LOADED")
 
 from flask import (
     Blueprint,
     request,
     jsonify,
-    render_template,
+    redirect
 )
 
-from datetime import datetime
-import secrets
+from database import (
+    get_db_connection,
+    booking_slot_is_available
+)
 
 from config import Config
-from database import get_db_connection
 
 import email_service
+
+import secrets
+
+import psycopg2.extras
+import threading
+import traceback
 
 
 # ============================================================
@@ -26,41 +30,110 @@ import email_service
 booking_bp = Blueprint(
     "booking",
     __name__,
-    url_prefix="/api",
+    url_prefix="/api"
+)
+
+# Email configuration diagnostics are intentionally kept out of the
+# browser response. They appear in Render/server logs only.
+print(
+    "BOOKING EMAIL CONFIG:",
+    {
+        "owner_email_configured": bool(Config.OWNER_EMAIL),
+        "resend_key_configured": bool(Config.RESEND_API_KEY),
+        "email_from_configured": bool(Config.EMAIL_FROM),
+        "domain_configured": bool(Config.DOMAIN),
+    }
 )
 
 
 # ============================================================
-# GENERATE APPROVAL TOKEN
+# HELPERS
 # ============================================================
 
-def generate_approval_token():
-    return secrets.token_urlsafe(32)
+def first_nonempty(data, *keys):
+    """
+    Return the first non-empty value from a list of possible
+    frontend field names.
+    """
+
+    for key in keys:
+
+        value = data.get(key)
+
+        if value is not None:
+
+            value = str(value).strip()
+
+            if value:
+                return value
+
+    return None
 
 
-# ============================================================
-# CONVERT DATABASE ROW TO DICTIONARY
-# ============================================================
+def get_server_price(lesson_type, package):
+    """
+    Calculate the official price on the SERVER.
 
-def row_to_dict(cursor, row):
+    Never trust the price sent by JavaScript.
+    """
 
-    if row is None:
+    try:
+
+        price_cents = Config.LESSON_PRICES[
+            lesson_type
+        ][
+            package
+        ]
+
+        return price_cents
+
+    except KeyError:
+
         return None
 
-    if hasattr(row, "keys"):
-        return dict(row)
 
-    columns = [
-        description[0]
-        for description in cursor.description
-    ]
+def format_price(price_cents):
+    """
+    Convert cents into a friendly dollar amount.
+    """
 
-    return dict(
-        zip(
-            columns,
-            row,
+    return f"${price_cents / 100:.2f}"
+
+
+def _send_customer_approval_email_background(booking):
+    """Send the customer approval email without blocking the owner response."""
+    try:
+        result = email_service.send_user_approved_email(dict(booking))
+        print(
+            "CUSTOMER APPROVAL EMAIL BACKGROUND RESULT:",
+            repr(result)
         )
+    except Exception as email_error:
+        print(
+            "CUSTOMER APPROVAL EMAIL BACKGROUND ERROR:",
+            repr(email_error)
+        )
+        traceback.print_exc()
+
+
+def _start_customer_approval_email(booking):
+    """Queue customer approval email on a background daemon thread."""
+    thread = threading.Thread(
+        target=_send_customer_approval_email_background,
+        args=(dict(booking),),
+        daemon=True,
+        name="millrod-customer-approval-email"
     )
+    thread.start()
+    return thread
+
+
+def generate_approval_token():
+    """
+    Generate a secure random approval token.
+    """
+
+    return secrets.token_urlsafe(32)
 
 
 # ============================================================
@@ -69,7 +142,7 @@ def row_to_dict(cursor, row):
 
 @booking_bp.route(
     "/create-booking",
-    methods=["POST"],
+    methods=["POST"]
 )
 def create_booking():
 
@@ -77,163 +150,214 @@ def create_booking():
 
     try:
 
+        # ----------------------------------------------------
+        # READ REQUEST
+        # ----------------------------------------------------
+
         data = request.get_json(
             silent=True
-        ) or {}
+        )
 
-        print("========================================")
-        print("NEW BOOKING REQUEST")
-        print("BOOKING DATA:")
-        print(data)
-        print("========================================")
+        if not data:
 
-        # ----------------------------------------------------
-        # CUSTOMER
-        # ----------------------------------------------------
-
-        student_name = (
-            data.get("student_name")
-            or data.get("name")
-            or ""
-        ).strip()
-
-        parent_name = (
-            data.get("parent_name")
-            or ""
-        ).strip()
-
-        email = (
-            data.get("email")
-            or ""
-        ).strip()
-
-        phone = (
-            data.get("phone")
-            or ""
-        ).strip()
-
-        # ----------------------------------------------------
-        # LESSON
-        # ----------------------------------------------------
-
-        lesson_type = (
-            data.get("lesson_type")
-            or ""
-        ).strip()
-
-        package = (
-            data.get("package")
-            or ""
-        ).strip()
-
-        lesson_date = (
-            data.get("lesson_date")
-            or data.get("date")
-            or ""
-        ).strip()
-
-        lesson_time = (
-            data.get("lesson_time")
-            or data.get("time")
-            or ""
-        ).strip()
-
-        # ----------------------------------------------------
-        # OTHER INFORMATION
-        # ----------------------------------------------------
-
-        dob = (
-            data.get("dob")
-            or ""
-        ).strip()
-
-        age = data.get("age") or ""
-
-        emergency_contact = (
-            data.get("emergency_contact")
-            or ""
-        ).strip()
-
-        emergency_phone = (
-            data.get("emergency_phone")
-            or ""
-        ).strip()
-
-        swimming_experience = (
-            data.get("swimming_experience")
-            or ""
-        ).strip()
-
-        medical = (
-            data.get("medical")
-            or ""
-        ).strip()
-
-        notes = (
-            data.get("notes")
-            or ""
-        ).strip()
-
-        price = (
-            data.get("price")
-            or ""
-        ).strip()
-
-        # ----------------------------------------------------
-        # VALIDATION
-        # ----------------------------------------------------
-
-        if not student_name:
             return jsonify({
                 "success": False,
-                "error": "Student name is required.",
+                "error": "No registration information was received."
             }), 400
 
-        if not email:
+
+        # ----------------------------------------------------
+        # CUSTOMER INFORMATION
+        # ----------------------------------------------------
+
+        name = first_nonempty(
+            data,
+            "name",
+            "full_name",
+            "student_name",
+            "first_name"
+        )
+
+        email = first_nonempty(
+            data,
+            "email",
+            "email_address"
+        )
+
+        phone = first_nonempty(
+            data,
+            "phone",
+            "phone_number"
+        )
+
+
+        # ----------------------------------------------------
+        # LESSON INFORMATION
+        # ----------------------------------------------------
+
+        lesson_type = first_nonempty(
+            data,
+            "lesson_type",
+            "lessonType",
+            "lesson",
+            "selectedLesson",
+            "type"
+        )
+
+        package = first_nonempty(
+            data,
+            "package",
+            "package_type"
+        )
+
+        lesson_date = first_nonempty(
+            data,
+            "lesson_date",
+            "date",
+            "lessonDate",
+            "selectedDate"
+        )
+
+        lesson_time = first_nonempty(
+            data,
+            "lesson_time",
+            "time",
+            "lessonTime",
+            "selectedTime"
+        )
+
+
+        # ----------------------------------------------------
+        # VALIDATE REQUIRED INFORMATION
+        # ----------------------------------------------------
+
+        required_fields = {
+
+            "name": name,
+
+            "email": email,
+
+            "phone": phone,
+
+            "lesson_type": lesson_type,
+
+            "package": package,
+
+            "lesson_date": lesson_date,
+
+            "lesson_time": lesson_time
+        }
+
+
+        missing_fields = [
+            field
+            for field, value in required_fields.items()
+            if not value
+        ]
+
+
+        if missing_fields:
+
             return jsonify({
                 "success": False,
-                "error": "Email address is required.",
+                "error": (
+                    "Please complete all required fields: "
+                    + ", ".join(missing_fields)
+                )
             }), 400
 
-        if not phone:
+
+        # ----------------------------------------------------
+        # VALIDATE LESSON TYPE
+        # ----------------------------------------------------
+
+        if lesson_type not in Config.LESSON_PRICES:
+
             return jsonify({
                 "success": False,
-                "error": "Phone number is required.",
+                "error": "The selected lesson type is not available."
             }), 400
 
-        if not lesson_type:
+
+        # ----------------------------------------------------
+        # VALIDATE PACKAGE
+        # ----------------------------------------------------
+
+        if package not in Config.LESSON_PRICES[
+            lesson_type
+        ]:
+
             return jsonify({
                 "success": False,
-                "error": "Lesson type is required.",
+                "error": "The selected package is not available."
             }), 400
 
-        if not package:
+
+        # ----------------------------------------------------
+        # SERVER-SIDE PRICE
+        # ----------------------------------------------------
+        #
+        # IMPORTANT:
+        #
+        # We intentionally IGNORE any price sent by the browser.
+        #
+        # The server calculates the official price.
+        # ----------------------------------------------------
+
+        price_cents = get_server_price(
+            lesson_type,
+            package
+        )
+
+
+        if price_cents is None:
+
             return jsonify({
                 "success": False,
-                "error": "Package is required.",
+                "error": "Unable to determine the lesson price."
             }), 400
 
-        if not lesson_date:
-            return jsonify({
-                "success": False,
-                "error": "Lesson date is required.",
-            }), 400
 
-        if not lesson_time:
+        price = format_price(
+            price_cents
+        )
+
+
+        # ----------------------------------------------------
+        # CHECK AVAILABILITY
+        # ----------------------------------------------------
+
+        if not booking_slot_is_available(
+            lesson_date,
+            lesson_time
+        ):
+
             return jsonify({
                 "success": False,
-                "error": "Lesson time is required.",
-            }), 400
+                "error": (
+                    "This lesson time is already reserved. "
+                    "Please choose another time."
+                )
+            }), 409
+
 
         # ----------------------------------------------------
         # DATABASE
         # ----------------------------------------------------
 
         conn = get_db_connection()
-        cursor = conn.cursor()
+
+        cursor = conn.cursor(
+            cursor_factory=psycopg2.extras.RealDictCursor
+        )
+
 
         # ----------------------------------------------------
-        # CHECK EXISTING BOOKING
+        # DOUBLE-CHECK SLOT
+        # ----------------------------------------------------
+        #
+        # This protects against a second request arriving
+        # between the first availability check and INSERT.
         # ----------------------------------------------------
 
         cursor.execute(
@@ -242,60 +366,63 @@ def create_booking():
             FROM bookings
             WHERE lesson_date = %s
               AND lesson_time = %s
-              AND status != 'cancelled'
+              AND status IN (
+                  'pending',
+                  'confirmed'
+              )
             LIMIT 1
             """,
             (
                 lesson_date,
-                lesson_time,
-            ),
+                lesson_time
+            )
         )
 
-        existing_booking = cursor.fetchone()
 
-        if existing_booking:
+        if cursor.fetchone():
+
+            conn.rollback()
 
             return jsonify({
                 "success": False,
                 "error": (
-                    "This lesson time is already booked. "
-                    "Please choose another time."
-                ),
+                    "This lesson time was just reserved "
+                    "by another customer. Please choose "
+                    "another time."
+                )
             }), 409
 
-        # ----------------------------------------------------
-        # APPROVAL TOKEN
-        # ----------------------------------------------------
-
-        approval_token = (
-            generate_approval_token()
-        )
 
         # ----------------------------------------------------
-        # CREATE BOOKING
+        # SECURE APPROVAL TOKEN
         # ----------------------------------------------------
 
-        created_at = datetime.now()
+        approval_token = generate_approval_token()
+
+
+        # ----------------------------------------------------
+        # INSERT BOOKING
+        # ----------------------------------------------------
 
         cursor.execute(
             """
-            INSERT INTO bookings (
+            INSERT INTO bookings
+            (
                 name,
                 email,
                 phone,
                 lesson_type,
                 package,
+                price,
                 lesson_date,
                 lesson_time,
+                payment_method,
                 payment_status,
-                stripe_payment_id,
                 status,
-                reminder_sent,
-                approval_token,
-                created_at
+                approval_token
             )
-            VALUES (
-                %s,
+            VALUES
+            (
                 %s,
                 %s,
                 %s,
@@ -309,107 +436,57 @@ def create_booking():
                 %s,
                 %s
             )
-            RETURNING id
+            RETURNING *
             """,
             (
-                student_name,
+                name,
                 email,
                 phone,
                 lesson_type,
                 package,
+                price,
                 lesson_date,
                 lesson_time,
+                "not_selected",
                 "pending",
-                None,
                 "pending",
-                False,
-                approval_token,
-                created_at,
-            ),
+                approval_token
+            )
         )
 
-        booking_id = cursor.fetchone()[0]
+
+        booking = cursor.fetchone()
 
         conn.commit()
 
-        # ----------------------------------------------------
-        # BOOKING DICTIONARY
-        # ----------------------------------------------------
-
-        booking = {
-            "id": booking_id,
-
-            "name": student_name,
-
-            "student_name": student_name,
-
-            "parent_name": parent_name,
-
-            "email": email,
-
-            "phone": phone,
-
-            "dob": dob,
-
-            "age": age,
-
-            "emergency_contact":
-                emergency_contact,
-
-            "emergency_phone":
-                emergency_phone,
-
-            "swimming_experience":
-                swimming_experience,
-
-            "lesson_type":
-                lesson_type,
-
-            "package":
-                package,
-
-            "lesson_date":
-                lesson_date,
-
-            "lesson_time":
-                lesson_time,
-
-            "price":
-                price,
-
-            "medical":
-                medical,
-
-            "notes":
-                notes,
-
-            "payment_status":
-                "pending",
-
-            "status":
-                "pending",
-
-            "approval_token":
-                approval_token,
-
-            "created_at":
-                created_at,
-        }
-
-        print("========================================")
-        print("BOOKING CREATED")
-        print(
-            "BOOKING ID:",
-            booking_id,
-        )
-        print(
-            "APPROVAL TOKEN PRESENT:",
-            bool(approval_token),
-        )
-        print("========================================")
 
         # ----------------------------------------------------
-        # SEND OWNER EMAIL
+        # SEND OWNER NOTIFICATION
+        # ----------------------------------------------------
+        #
+        # The customer is NOT approved yet.
+        #
+        # Owner receives:
+        #
+        # APPROVE
+        # REJECT
+        #
+        # ----------------------------------------------------
+
+        # ----------------------------------------------------
+        # SEND OWNER NOTIFICATION
+        # ----------------------------------------------------
+        #
+        # IMPORTANT:
+        # Do NOT silently report success if the owner email fails.
+        # The previous version caught the email exception and still
+        # returned success to the customer, which made it look like
+        # everything worked even when Resend rejected the email.
+        #
+        # The booking is already committed, so if email delivery fails
+        # we keep the booking and return a clear server error. This
+        # prevents losing the registration while making the failure
+        # visible in the browser and Render logs.
         # ----------------------------------------------------
 
         try:
@@ -429,574 +506,183 @@ def create_booking():
                     "EMAIL_FROM is not configured."
                 )
 
-            print(
-                "SENDING OWNER APPROVAL EMAIL..."
-            )
-
-            email_result = (
-                email_service
-                .send_admin_notification(
-                    booking
-                )
-            )
-
-            print(
-                "OWNER EMAIL RESULT:",
-                repr(email_result),
+            email_result = email_service.send_admin_notification(
+                booking
             )
 
             if not email_result:
                 raise RuntimeError(
-                    "send_admin_notification() "
-                    "returned False."
+                    "Owner notification did not return a Resend response."
                 )
 
             print(
-                f"OWNER APPROVAL EMAIL SENT "
-                f"FOR BOOKING #{booking_id}"
+                f"OWNER NOTIFICATION SENT "
+                f"FOR BOOKING #{booking['id']}: "
+                f"{email_result}"
             )
 
         except Exception as email_error:
 
             print(
-                "========================================"
-            )
-
-            print(
-                "OWNER EMAIL ERROR:"
-            )
-
-            print(
+                "OWNER EMAIL ERROR:",
                 repr(email_error)
-            )
-
-            print(
-                "========================================"
             )
 
             return jsonify({
                 "success": False,
-                "booking_id": booking_id,
+                "booking_id": booking["id"],
                 "error": (
-                    "Your booking was saved, "
-                    "but the owner approval email "
-                    "could not be sent."
-                ),
+                    "Your registration was saved, but we could not "
+                    "send the approval email to the owner. "
+                    "Please contact the academy or try again later."
+                )
             }), 500
 
+
         # ----------------------------------------------------
-        # SUCCESS
+        # CUSTOMER RESPONSE
         # ----------------------------------------------------
 
         return jsonify({
+
             "success": True,
-            "booking_id": booking_id,
+
+            "booking_id": booking["id"],
+
+            "price": price,
+
+            "status": "pending",
+
             "message": (
-                "Booking request sent for approval."
-            ),
+                "Thank you! Your registration request "
+                "has been sent for approval. "
+                "We will email you once your request "
+                "has been reviewed."
+            )
         }), 201
+
 
     except Exception as error:
 
         if conn:
 
-            try:
-                conn.rollback()
-            except Exception:
-                pass
+            conn.rollback()
+
 
         print(
             "CREATE BOOKING ERROR:",
-            repr(error),
+            repr(error)
+        )
+
+
+        return jsonify({
+
+            "success": False,
+
+            "error": (
+                "We were unable to submit your registration "
+                "right now. Please try again."
+            )
+
+        }), 500
+
+
+    finally:
+
+        if conn:
+
+            conn.close()
+
+
+# ============================================================
+# GET BOOKINGS FOR CALENDAR
+# ============================================================
+
+@booking_bp.route(
+    "/bookings",
+    methods=["GET"]
+)
+def get_bookings():
+
+    conn = None
+
+    try:
+
+        conn = get_db_connection()
+
+        cursor = conn.cursor(
+            cursor_factory=psycopg2.extras.RealDictCursor
+        )
+
+
+        cursor.execute(
+            """
+            SELECT
+                id,
+                lesson_date,
+                lesson_time,
+                status
+            FROM bookings
+            WHERE status IN (
+                'pending',
+                'confirmed'
+            )
+            ORDER BY lesson_date, lesson_time
+            """
+        )
+
+
+        rows = cursor.fetchall()
+
+
+        return jsonify([
+
+            {
+                "id": row["id"],
+
+                "title": "Reserved",
+
+                "start": (
+                    f"{row['lesson_date']}"
+                    f"T"
+                    f"{row['lesson_time']}"
+                ),
+
+                "status": row["status"]
+            }
+
+            for row in rows
+
+        ])
+
+
+    except Exception as error:
+
+        print(
+            "GET BOOKINGS ERROR:",
+            repr(error)
         )
 
         return jsonify({
             "success": False,
-            "error": (
-                "Unable to create your booking. "
-                "Please try again."
-            ),
+            "error": "Unable to load bookings."
         }), 500
 
-    finally:
-
-        if conn:
-            conn.close()
-
-
-# ============================================================
-# APPROVE BOOKING
-# ============================================================
-
-@booking_bp.route(
-    "/approve-booking",
-    methods=["GET"],
-)
-def approve_booking():
-
-    conn = None
-
-    try:
-
-        token = (
-            request.args.get(
-                "token",
-                "",
-            ).strip()
-        )
-
-        booking_id = (
-            request.args.get(
-                "booking_id",
-                "",
-            ).strip()
-        )
-
-        print("========================================")
-        print("APPROVE BOOKING REQUEST")
-        print(
-            "TOKEN PRESENT:",
-            bool(token),
-        )
-        print(
-            "BOOKING ID:",
-            booking_id,
-        )
-        print("========================================")
-
-        conn = get_db_connection()
-        cursor = conn.cursor()
-
-        # ----------------------------------------------------
-        # FIND BY SECURE TOKEN
-        # ----------------------------------------------------
-
-        if token:
-
-            cursor.execute(
-                """
-                SELECT *
-                FROM bookings
-                WHERE approval_token = %s
-                LIMIT 1
-                """,
-                (token,),
-            )
-
-        # ----------------------------------------------------
-        # BACKWARD COMPATIBILITY
-        # ----------------------------------------------------
-
-        elif booking_id:
-
-            if not booking_id.isdigit():
-
-                return (
-                    "Invalid booking_id",
-                    400,
-                )
-
-            cursor.execute(
-                """
-                SELECT *
-                FROM bookings
-                WHERE id = %s
-                LIMIT 1
-                """,
-                (int(booking_id),),
-            )
-
-        else:
-
-            return (
-                "Invalid approval link",
-                400,
-            )
-
-        booking_row = cursor.fetchone()
-
-        if not booking_row:
-
-            return (
-                "Booking not found",
-                404,
-            )
-
-        booking = row_to_dict(
-            cursor,
-            booking_row,
-        )
-
-        print(
-            "FOUND BOOKING:",
-            booking.get("id"),
-        )
-
-        # ----------------------------------------------------
-        # ALREADY CONFIRMED
-        # ----------------------------------------------------
-
-        if (
-            booking.get("status")
-            == "confirmed"
-        ):
-
-            return render_template(
-                "approval_result.html",
-                success=True,
-                title="Booking Already Confirmed",
-                message=(
-                    "This booking has already "
-                    "been approved."
-                ),
-            )
-
-        # ----------------------------------------------------
-        # CANCELLED
-        # ----------------------------------------------------
-
-        if (
-            booking.get("status")
-            == "cancelled"
-        ):
-
-            return render_template(
-                "approval_result.html",
-                success=False,
-                title="Booking Cancelled",
-                message=(
-                    "This booking has already "
-                    "been cancelled."
-                ),
-            )
-
-        # ----------------------------------------------------
-        # CONFIRM BOOKING
-        # ----------------------------------------------------
-
-        cursor.execute(
-            """
-            UPDATE bookings
-            SET status = 'confirmed'
-            WHERE id = %s
-            """,
-            (booking["id"],),
-        )
-
-        conn.commit()
-
-        booking["status"] = "confirmed"
-
-        print(
-            f"BOOKING #{booking['id']} "
-            "CONFIRMED"
-        )
-
-        # ----------------------------------------------------
-        # CUSTOMER APPROVAL EMAIL
-        # ----------------------------------------------------
-
-        try:
-
-            if hasattr(
-                email_service,
-                "send_booking_approved",
-            ):
-
-                email_result = (
-                    email_service
-                    .send_booking_approved(
-                        booking
-                    )
-                )
-
-                print(
-                    "CUSTOMER APPROVAL EMAIL RESULT:",
-                    repr(email_result),
-                )
-
-            else:
-
-                print(
-                    "WARNING: "
-                    "send_booking_approved() "
-                    "does not exist."
-                )
-
-        except Exception as email_error:
-
-            print(
-                "CUSTOMER APPROVAL EMAIL ERROR:",
-                repr(email_error),
-            )
-
-        # ----------------------------------------------------
-        # SUCCESS PAGE
-        # ----------------------------------------------------
-
-        return render_template(
-            "approval_result.html",
-            success=True,
-            title="Booking Approved!",
-            message=(
-                f"Booking #{booking['id']} "
-                "has been successfully approved. "
-                "The customer has been notified."
-            ),
-        )
-
-    except Exception as error:
-
-        if conn:
-
-            try:
-                conn.rollback()
-            except Exception:
-                pass
-
-        print(
-            "APPROVE BOOKING ERROR:",
-            repr(error),
-        )
-
-        return render_template(
-            "approval_result.html",
-            success=False,
-            title="Approval Error",
-            message=(
-                "We could not approve this booking. "
-                "Please try again."
-            ),
-        ), 500
 
     finally:
 
         if conn:
+
             conn.close()
 
 
 # ============================================================
-# REJECT BOOKING
-# ============================================================
-
-@booking_bp.route(
-    "/reject-booking",
-    methods=["GET"],
-)
-def reject_booking():
-
-    conn = None
-
-    try:
-
-        token = (
-            request.args.get(
-                "token",
-                "",
-            ).strip()
-        )
-
-        booking_id = (
-            request.args.get(
-                "booking_id",
-                "",
-            ).strip()
-        )
-
-        conn = get_db_connection()
-        cursor = conn.cursor()
-
-        # ----------------------------------------------------
-        # FIND BY TOKEN
-        # ----------------------------------------------------
-
-        if token:
-
-            cursor.execute(
-                """
-                SELECT *
-                FROM bookings
-                WHERE approval_token = %s
-                LIMIT 1
-                """,
-                (token,),
-            )
-
-        # ----------------------------------------------------
-        # OLD BOOKING ID
-        # ----------------------------------------------------
-
-        elif booking_id:
-
-            if not booking_id.isdigit():
-
-                return (
-                    "Invalid booking_id",
-                    400,
-                )
-
-            cursor.execute(
-                """
-                SELECT *
-                FROM bookings
-                WHERE id = %s
-                LIMIT 1
-                """,
-                (int(booking_id),),
-            )
-
-        else:
-
-            return (
-                "Invalid approval link",
-                400,
-            )
-
-        booking_row = cursor.fetchone()
-
-        if not booking_row:
-
-            return (
-                "Booking not found",
-                404,
-            )
-
-        booking = row_to_dict(
-            cursor,
-            booking_row,
-        )
-
-        # ----------------------------------------------------
-        # ALREADY CANCELLED
-        # ----------------------------------------------------
-
-        if (
-            booking.get("status")
-            == "cancelled"
-        ):
-
-            return render_template(
-                "approval_result.html",
-                success=False,
-                title="Booking Already Cancelled",
-                message=(
-                    "This booking has already "
-                    "been cancelled."
-                ),
-            )
-
-        # ----------------------------------------------------
-        # CANCEL BOOKING
-        # ----------------------------------------------------
-
-        cursor.execute(
-            """
-            UPDATE bookings
-            SET status = 'cancelled'
-            WHERE id = %s
-            """,
-            (booking["id"],),
-        )
-
-        conn.commit()
-
-        booking["status"] = "cancelled"
-
-        print(
-            f"BOOKING #{booking['id']} "
-            "CANCELLED"
-        )
-
-        # ----------------------------------------------------
-        # CUSTOMER REJECTION EMAIL
-        # ----------------------------------------------------
-
-        try:
-
-            if hasattr(
-                email_service,
-                "send_booking_rejected",
-            ):
-
-                email_result = (
-                    email_service
-                    .send_booking_rejected(
-                        booking
-                    )
-                )
-
-                print(
-                    "CUSTOMER REJECTION EMAIL RESULT:",
-                    repr(email_result),
-                )
-
-            else:
-
-                print(
-                    "WARNING: "
-                    "send_booking_rejected() "
-                    "does not exist."
-                )
-
-        except Exception as email_error:
-
-            print(
-                "CUSTOMER REJECTION EMAIL ERROR:",
-                repr(email_error),
-            )
-
-        # ----------------------------------------------------
-        # SUCCESS PAGE
-        # ----------------------------------------------------
-
-        return render_template(
-            "approval_result.html",
-            success=True,
-            title="Booking Cancelled",
-            message=(
-                f"Booking #{booking['id']} "
-                "has been cancelled. "
-                "The customer has been notified."
-            ),
-        )
-
-    except Exception as error:
-
-        if conn:
-
-            try:
-                conn.rollback()
-            except Exception:
-                pass
-
-        print(
-            "REJECT BOOKING ERROR:",
-            repr(error),
-        )
-
-        return render_template(
-            "approval_result.html",
-            success=False,
-            title="Cancellation Error",
-            message=(
-                "We could not cancel this booking. "
-                "Please try again."
-            ),
-        ), 500
-
-    finally:
-
-        if conn:
-            conn.close()
-
-
-# ============================================================
-# BOOKED SLOTS
+# GET BOOKED SLOTS
 # ============================================================
 
 @booking_bp.route(
     "/booked-slots",
-    methods=["GET"],
+    methods=["GET"]
 )
 def booked_slots():
 
@@ -1005,7 +691,11 @@ def booked_slots():
     try:
 
         conn = get_db_connection()
-        cursor = conn.cursor()
+
+        cursor = conn.cursor(
+            cursor_factory=psycopg2.extras.RealDictCursor
+        )
+
 
         cursor.execute(
             """
@@ -1013,52 +703,408 @@ def booked_slots():
                 lesson_date,
                 lesson_time
             FROM bookings
-            WHERE status != 'cancelled'
+            WHERE status IN (
+                'pending',
+                'confirmed'
+            )
             ORDER BY lesson_date, lesson_time
             """
         )
 
+
         rows = cursor.fetchall()
 
-        slots = []
 
-        for row in rows:
+        return jsonify([
 
-            item = row_to_dict(
-                cursor,
-                row,
-            )
+            {
+                "date": row["lesson_date"],
 
-            slots.append({
-                "date": str(
-                    item.get(
-                        "lesson_date"
-                    )
-                ),
+                "time": row["lesson_time"]
+            }
 
-                "time": str(
-                    item.get(
-                        "lesson_time"
-                    )
-                ),
-            })
+            for row in rows
 
-        return jsonify(slots)
+        ])
+
 
     except Exception as error:
 
         print(
             "BOOKED SLOTS ERROR:",
-            repr(error),
+            repr(error)
         )
 
         return jsonify({
             "success": False,
-            "error":
-                "Unable to load booked slots.",
+            "error": "Unable to load available times."
         }), 500
+
 
     finally:
 
         if conn:
+
+            conn.close()
+
+
+# ============================================================
+# OWNER APPROVES BOOKING
+# ============================================================
+
+@booking_bp.route(
+    "/approve-booking",
+    methods=["GET"]
+)
+def approve_booking():
+
+    booking = None
+
+    conn = None
+
+    try:
+
+        token = request.args.get(
+            "token",
+            ""
+        ).strip()
+
+
+        if not token:
+
+            return (
+                "<h2>Invalid approval link</h2>"
+                "<p>This approval link is missing its secure token.</p>"
+            ), 400
+
+
+        conn = get_db_connection()
+
+        cursor = conn.cursor(
+            cursor_factory=psycopg2.extras.RealDictCursor
+        )
+
+
+        # ----------------------------------------------------
+        # FIND BOOKING BY SECURE TOKEN
+        # ----------------------------------------------------
+
+        cursor.execute(
+            """
+            SELECT *
+            FROM bookings
+            WHERE approval_token = %s
+            LIMIT 1
+            """,
+            (token,)
+        )
+
+
+        booking = cursor.fetchone()
+
+
+        if not booking:
+
+            return (
+                "<h2>Booking Not Found</h2>"
+                "<p>This approval link is invalid or expired.</p>"
+            ), 404
+
+
+        # ----------------------------------------------------
+        # ALREADY REJECTED
+        # ----------------------------------------------------
+
+        if booking["status"] == "rejected":
+
+            return (
+                "<h2>Booking Already Rejected</h2>"
+                "<p>This registration has already been rejected.</p>"
+            ), 409
+
+
+        # ----------------------------------------------------
+        # ALREADY APPROVED
+        # ----------------------------------------------------
+
+        if booking["status"] == "confirmed":
+
+            return (
+                "<h2>Booking Already Approved ✔</h2>"
+                "<p>The customer has already been notified.</p>"
+            ), 200
+
+
+        # ----------------------------------------------------
+        # APPROVE
+        # ----------------------------------------------------
+
+        cursor.execute(
+            """
+            UPDATE bookings
+            SET
+                status = 'confirmed',
+                payment_status = 'pending'
+            WHERE id = %s
+            RETURNING *
+            """,
+            (booking["id"],)
+        )
+
+
+        booking = cursor.fetchone()
+
+        conn.commit()
+
+
+        # ----------------------------------------------------
+        # SEND CUSTOMER APPROVAL EMAIL IN BACKGROUND
+        # ----------------------------------------------------
+        #
+        # IMPORTANT:
+        # The owner must never wait for Resend/email delivery.
+        # The booking is already committed above, so we start the
+        # email in a background thread and immediately show success.
+        # This prevents the Approve Booking link from appearing frozen.
+        # ----------------------------------------------------
+
+        _start_customer_approval_email(booking)
+
+        print(
+            f"APPROVAL SAVED FOR BOOKING #{booking['id']}. "
+            "CUSTOMER EMAIL QUEUED IN BACKGROUND."
+        )
+
+
+        # ----------------------------------------------------
+        # OWNER RESULT
+        # ----------------------------------------------------
+
+        return (
+            "<!doctype html>"
+            "<html lang='en'>"
+            "<head>"
+            "<meta charset='utf-8'>"
+            "<meta name='viewport' content='width=device-width,initial-scale=1'>"
+            "<title>Booking Approved | Millrod Swim Academy</title>"
+            "</head>"
+            "<body style='margin:0;background:#eef7fb;font-family:Arial,Helvetica,sans-serif;color:#17324d;'>"
+            "<div style='max-width:620px;margin:60px auto;padding:20px;'>"
+            "<div style='background:#fff;border-radius:22px;padding:42px 32px;text-align:center;box-shadow:0 18px 55px rgba(0,70,120,.14);'>"
+            "<div style='width:78px;height:78px;margin:0 auto 18px;border-radius:50%;background:#e8f8ef;color:#198754;font-size:46px;line-height:78px;font-weight:700;'>✓</div>"
+            "<div style='font-size:13px;font-weight:800;letter-spacing:.12em;text-transform:uppercase;color:#0077b6;'>Millrod Swim Academy</div>"
+            "<h1 style='margin:10px 0;color:#063b73;font-size:30px;'>Booking Approved</h1>"
+            "<p style='font-size:17px;line-height:1.6;color:#566b7d;margin:0 auto 18px;max-width:480px;'>"
+            "The lesson request has been approved successfully. The customer notification is now being sent."
+            "</p>"
+            "<div style='margin-top:24px;padding:16px;border-radius:12px;background:#f5fafc;color:#496273;font-size:14px;'>"
+            "You can safely close this page. No further action is required."
+            "</div>"
+            "</div></div>"
+            "</body></html>"
+        )
+
+
+    except Exception as error:
+
+        if conn:
+
+            conn.rollback()
+
+
+        print(
+            "APPROVE BOOKING ERROR:",
+            repr(error)
+        )
+
+
+        return (
+            "<h2>Unable to Approve Booking</h2>"
+            "<p>Please try again or contact the administrator.</p>"
+        ), 500
+
+
+    finally:
+
+        if conn:
+
+            conn.close()
+
+
+# ============================================================
+# OWNER REJECTS BOOKING
+# ============================================================
+
+@booking_bp.route(
+    "/reject-booking",
+    methods=["GET"]
+)
+def reject_booking():
+
+    conn = None
+
+    try:
+
+        token = request.args.get(
+            "token",
+            ""
+        ).strip()
+
+
+        if not token:
+
+            return (
+                "<h2>Invalid rejection link</h2>"
+                "<p>This rejection link is missing its secure token.</p>"
+            ), 400
+
+
+        conn = get_db_connection()
+
+        cursor = conn.cursor(
+            cursor_factory=psycopg2.extras.RealDictCursor
+        )
+
+
+        # ----------------------------------------------------
+        # FIND BOOKING
+        # ----------------------------------------------------
+
+        cursor.execute(
+            """
+            SELECT *
+            FROM bookings
+            WHERE approval_token = %s
+            LIMIT 1
+            """,
+            (token,)
+        )
+
+
+        booking = cursor.fetchone()
+
+
+        if not booking:
+
+            return (
+                "<h2>Booking Not Found</h2>"
+                "<p>This link is invalid or expired.</p>"
+            ), 404
+
+
+        # ----------------------------------------------------
+        # ALREADY APPROVED
+        # ----------------------------------------------------
+
+        if booking["status"] == "confirmed":
+
+            return (
+                "<h2>Booking Already Approved</h2>"
+                "<p>This registration has already been approved.</p>"
+            ), 409
+
+
+        # ----------------------------------------------------
+        # ALREADY REJECTED
+        # ----------------------------------------------------
+
+        if booking["status"] == "rejected":
+
+            return (
+                "<h2>Booking Already Rejected</h2>"
+                "<p>The customer has already been notified.</p>"
+            ), 200
+
+
+        # ----------------------------------------------------
+        # REJECT
+        # ----------------------------------------------------
+
+        cursor.execute(
+            """
+            UPDATE bookings
+            SET
+                status = 'rejected'
+            WHERE id = %s
+            RETURNING *
+            """,
+            (booking["id"],)
+        )
+
+
+        booking = cursor.fetchone()
+
+        conn.commit()
+
+
+        # ----------------------------------------------------
+        # SEND CUSTOMER REJECTION EMAIL
+        # ----------------------------------------------------
+
+        try:
+
+            email_service.send_user_rejected_email(
+                booking
+            )
+
+            print(
+                f"REJECTION EMAIL SENT "
+                f"FOR BOOKING #{booking['id']}"
+            )
+
+        except Exception as email_error:
+
+            print(
+                "REJECTION EMAIL ERROR:",
+                repr(email_error)
+            )
+
+
+        # ----------------------------------------------------
+        # OWNER RESULT
+        # ----------------------------------------------------
+
+        return (
+            "<div style='"
+            "font-family:Arial,sans-serif;"
+            "max-width:600px;"
+            "margin:60px auto;"
+            "padding:40px;"
+            "text-align:center;"
+            "border-radius:16px;"
+            "background:#fff8f8;"
+            "box-shadow:0 10px 30px rgba(0,0,0,.08);"
+            "'>"
+            "<div style='font-size:55px;'>✖</div>"
+            "<h2 style='color:#dc3545;'>Booking Rejected</h2>"
+            "<p style='font-size:17px;color:#555;'>"
+            "The customer has been notified."
+            "</p>"
+            "</div>"
+        )
+
+
+    except Exception as error:
+
+        if conn:
+
+            conn.rollback()
+
+
+        print(
+            "REJECT BOOKING ERROR:",
+            repr(error)
+        )
+
+
+        return (
+            "<h2>Unable to Reject Booking</h2>"
+            "<p>Please try again or contact the administrator.</p>"
+        ), 500
+
+
+    finally:
+
+        if conn:
+
             conn.close()

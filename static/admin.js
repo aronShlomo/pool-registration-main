@@ -1,1379 +1,794 @@
 /* ============================================================
    MILLROD SWIM ACADEMY
-   ADMIN DASHBOARD
-   ============================================================
-
-   FEATURES
-   ------------------------------------------------------------
-   • Visible 5-minute security countdown
-   • Automatic logout at 00:00
-   • Activity detection
-   • Timer resets after admin activity
-   • Server-side session compatibility
-   • Booking view modal
-   • Approve booking
-   • Reject booking
-   • Mark payment paid
-   • Return payment to pending
-   • Resend emails
-   • Search bookings
-   • Status filtering
-   • Date filtering
-   • Dashboard statistics
-   • Toast notifications
-   • Mobile friendly
+   ADMIN DASHBOARD JAVASCRIPT
    ============================================================ */
 
-(function () {
-  "use strict";
+"use strict";
 
-  // ========================================================
-  // CONFIGURATION
-  // ========================================================
+/* ============================================================
+   CONFIGURATION
+   ============================================================ */
 
-  const SESSION_LENGTH_SECONDS = 5 * 60;
+const ADMIN_CONFIG = {
+  requestTimeout: 15000,
 
-  const ACTIVITY_DEBOUNCE_MS = 1000;
+  sessionMinutes: 5,
 
-  const STATS_REFRESH_MS = 60 * 1000;
+  apiPrefix: "/admin/api",
+};
 
-  // ========================================================
-  // STATE
-  // ========================================================
+/* ============================================================
+   DOM READY
+   ============================================================ */
 
-  let secondsRemaining = SESSION_LENGTH_SECONDS;
+document.addEventListener("DOMContentLoaded", function () {
+  initializeAdminDashboard();
+});
 
-  let countdownInterval = null;
+/* ============================================================
+   INITIALIZE
+   ============================================================ */
 
-  let activityTimeout = null;
+function initializeAdminDashboard() {
+  setupNavigation();
 
-  let logoutStarted = false;
+  setupSearch();
 
-  // ========================================================
-  // DOM HELPERS
-  // ========================================================
+  setupBookingActions();
 
-  function getElement(id) {
-    return document.getElementById(id);
-  }
+  setupLogoutProtection();
 
-  // ========================================================
-  // TOAST
-  // ========================================================
+  initializeSessionTimer();
 
-  function showToast(message, type = "success") {
-    let container = getElement("adminToastContainer");
+  loadDashboardStats();
+}
 
-    if (!container) {
-      container = document.createElement("div");
+/* ============================================================
+   NAVIGATION
+   ============================================================ */
 
-      container.id = "adminToastContainer";
+function setupNavigation() {
+  const links = document.querySelectorAll(".sidebar nav a[href^='#']");
 
-      container.style.cssText = `
-                position: fixed;
-                right: 20px;
-                bottom: 20px;
-                z-index: 999999;
+  links.forEach(function (link) {
+    link.addEventListener("click", function (event) {
+      const targetId = link.getAttribute("href");
 
-                display: flex;
-                flex-direction: column;
-                gap: 10px;
-
-                width: min(
-                    420px,
-                    calc(100vw - 40px)
-                );
-
-                pointer-events: none;
-            `;
-
-      document.body.appendChild(container);
-    }
-
-    const toast = document.createElement("div");
-
-    let borderColor = "#14834b";
-
-    if (type === "error") {
-      borderColor = "#b42323";
-    }
-
-    if (type === "warning") {
-      borderColor = "#b45309";
-    }
-
-    toast.style.cssText = `
-            padding: 15px 18px;
-
-            border-left:
-                4px solid ${borderColor};
-
-            border-radius: 14px;
-
-            background:
-                rgba(255,255,255,.98);
-
-            color: #17324d;
-
-            font-weight: 700;
-
-            line-height: 1.4;
-
-            box-shadow:
-                0 18px 45px
-                rgba(6,59,115,.18);
-
-            opacity: 0;
-
-            transform:
-                translateY(12px);
-
-            transition:
-                opacity .25s ease,
-                transform .25s ease;
-        `;
-
-    toast.textContent = message;
-
-    container.appendChild(toast);
-
-    requestAnimationFrame(function () {
-      toast.style.opacity = "1";
-
-      toast.style.transform = "translateY(0)";
-    });
-
-    setTimeout(function () {
-      toast.style.opacity = "0";
-
-      toast.style.transform = "translateY(12px)";
-
-      setTimeout(function () {
-        toast.remove();
-      }, 250);
-    }, 4000);
-  }
-
-  // ========================================================
-  // FORMAT TIMER
-  // ========================================================
-
-  function formatTime(totalSeconds) {
-    totalSeconds = Math.max(0, Math.floor(totalSeconds));
-
-    const minutes = Math.floor(totalSeconds / 60);
-
-    const seconds = totalSeconds % 60;
-
-    return (
-      String(minutes).padStart(2, "0") + ":" + String(seconds).padStart(2, "0")
-    );
-  }
-
-  // ========================================================
-  // GET TIMER ELEMENTS
-  // ========================================================
-
-  function getTimer() {
-    return {
-      container: getElement("adminSessionTimer"),
-
-      countdown: getElement("sessionCountdown"),
-    };
-  }
-
-  // ========================================================
-  // UPDATE TIMER ON SCREEN
-  // ========================================================
-
-  function updateTimerDisplay() {
-    const timer = getTimer();
-
-    if (!timer.countdown) {
-      console.warn("Admin timer element #sessionCountdown was not found.");
-
-      return;
-    }
-
-    timer.countdown.textContent = formatTime(secondsRemaining);
-
-    // ----------------------------------------------------
-    // NORMAL
-    // ----------------------------------------------------
-
-    if (secondsRemaining > 60) {
-      timer.countdown.style.color = "";
-
-      if (timer.container) {
-        timer.container.classList.remove("warning", "danger");
-      }
-
-      return;
-    }
-
-    // ----------------------------------------------------
-    // WARNING
-    // ----------------------------------------------------
-
-    if (secondsRemaining > 20) {
-      timer.countdown.style.color = "#b45309";
-
-      if (timer.container) {
-        timer.container.classList.add("warning");
-
-        timer.container.classList.remove("danger");
-      }
-
-      return;
-    }
-
-    // ----------------------------------------------------
-    // DANGER
-    // ----------------------------------------------------
-
-    timer.countdown.style.color = "#b42323";
-
-    if (timer.container) {
-      timer.container.classList.add("danger");
-
-      timer.container.classList.remove("warning");
-    }
-  }
-
-  // ========================================================
-  // RESET TIMER
-  // ========================================================
-
-  function resetTimer() {
-    if (logoutStarted) {
-      return;
-    }
-
-    secondsRemaining = SESSION_LENGTH_SECONDS;
-
-    updateTimerDisplay();
-  }
-
-  // ========================================================
-  // START TIMER
-  // ========================================================
-
-  function startTimer() {
-    console.log("Starting admin security timer: 05:00");
-
-    secondsRemaining = SESSION_LENGTH_SECONDS;
-
-    updateTimerDisplay();
-
-    if (countdownInterval) {
-      clearInterval(countdownInterval);
-    }
-
-    countdownInterval = setInterval(function () {
-      if (logoutStarted) {
+      if (!targetId || targetId === "#") {
         return;
       }
 
-      secondsRemaining--;
+      const target = document.querySelector(targetId);
 
-      updateTimerDisplay();
-
-      // ----------------------------------------
-      // EXPIRED
-      // ----------------------------------------
-
-      if (secondsRemaining <= 0) {
-        expireSession();
+      if (!target) {
+        return;
       }
-    }, 1000);
-  }
 
-  // ========================================================
-  // EXPIRE SESSION
-  // ========================================================
+      event.preventDefault();
 
-  function expireSession() {
-    if (logoutStarted) {
-      return;
-    }
-
-    logoutStarted = true;
-
-    if (countdownInterval) {
-      clearInterval(countdownInterval);
-
-      countdownInterval = null;
-    }
-
-    const timer = getTimer();
-
-    if (timer.countdown) {
-      timer.countdown.textContent = "00:00";
-    }
-
-    showToast(
-      "Your secure admin session has expired. Signing you out...",
-      "warning",
-    );
-
-    /*
-     * Give the user a short moment to see
-     * the message before redirecting.
-     */
-
-    setTimeout(function () {
-      window.location.href = "/admin/logout";
-    }, 800);
-  }
-
-  // ========================================================
-  // REGISTER ACTIVITY
-  // ========================================================
-
-  function registerActivity() {
-    if (logoutStarted) {
-      return;
-    }
-
-    /*
-     * Mouse movement and scrolling can fire
-     * hundreds of events.
-     *
-     * Debounce them so we don't reset the timer
-     * continuously.
-     */
-
-    if (activityTimeout) {
-      return;
-    }
-
-    activityTimeout = setTimeout(function () {
-      resetTimer();
-
-      activityTimeout = null;
-    }, ACTIVITY_DEBOUNCE_MS);
-  }
-
-  // ========================================================
-  // ACTIVITY EVENTS
-  // ========================================================
-
-  function initializeActivityTracking() {
-    const events = [
-      "click",
-
-      "keydown",
-
-      "mousedown",
-
-      "pointerdown",
-
-      "touchstart",
-
-      "scroll",
-
-      "wheel",
-
-      "input",
-
-      "change",
-    ];
-
-    events.forEach(function (eventName) {
-      document.addEventListener(eventName, registerActivity, {
-        passive: true,
+      target.scrollIntoView({
+        behavior: "smooth",
+        block: "start",
       });
+
+      links.forEach(function (item) {
+        item.classList.remove("active");
+      });
+
+      link.classList.add("active");
     });
+  });
+}
 
-    console.log("Admin activity tracking enabled.");
+/* ============================================================
+   SEARCH BOOKINGS
+   ============================================================ */
+
+function setupSearch() {
+  const input = document.getElementById("searchInput");
+
+  if (!input) {
+    return;
   }
 
-  // ========================================================
-  // API HELPER
-  // ========================================================
+  input.addEventListener("input", function () {
+    const query = input.value.trim().toLowerCase();
 
-  async function api(url, options = {}) {
-    const requestOptions = {
-      credentials: "same-origin",
+    const rows = document.querySelectorAll("#bookingTable tbody tr");
 
-      ...options,
-    };
+    rows.forEach(function (row) {
+      const text = row.textContent.toLowerCase();
 
-    requestOptions.headers = {
-      "Content-Type": "application/json",
+      if (!query || text.includes(query)) {
+        row.style.display = "";
+      } else {
+        row.style.display = "none";
+      }
+    });
+  });
+}
 
-      ...(options.headers || {}),
-    };
+/* ============================================================
+   BOOKING ACTIONS
+   ============================================================ */
 
-    const response = await fetch(url, requestOptions);
+function setupBookingActions() {
+  document.addEventListener("click", async function (event) {
+    const button = event.target.closest("button");
 
-    // ----------------------------------------------------
-    // SESSION EXPIRED
-    // ----------------------------------------------------
-
-    if (response.status === 401 || response.status === 403) {
-      showToast("Your admin session has expired.", "warning");
-
-      setTimeout(function () {
-        window.location.href = "/admin/login?timeout=1";
-      }, 500);
-
-      throw new Error("Admin session expired.");
-    }
-
-    let data;
-
-    try {
-      data = await response.json();
-    } catch (error) {
-      throw new Error("The server returned an invalid response.");
-    }
-
-    if (!response.ok || data.success === false) {
-      throw new Error(data.error || data.message || "The request failed.");
-    }
-
-    return data;
-  }
-
-  // ========================================================
-  // BUTTON LOADING
-  // ========================================================
-
-  function setButtonLoading(button, loading, text = "Working...") {
     if (!button) {
       return;
     }
 
-    if (loading) {
-      if (!button.dataset.originalHtml) {
-        button.dataset.originalHtml = button.innerHTML;
-      }
+    const bookingId = button.dataset.id;
 
-      button.disabled = true;
-
-      button.style.opacity = "0.65";
-
-      button.style.cursor = "wait";
-
-      button.innerHTML = `
-
-                <i class="fas fa-spinner fa-spin"></i>
-
-                ${text}
-
-            `;
-    } else {
-      button.disabled = false;
-
-      button.style.opacity = "";
-
-      button.style.cursor = "";
-
-      if (button.dataset.originalHtml) {
-        button.innerHTML = button.dataset.originalHtml;
-      }
+    if (!bookingId) {
+      return;
     }
+
+    /* -----------------------------------------------
+               CONFIRM / APPROVE
+            ------------------------------------------------ */
+
+    if (button.classList.contains("confirm-btn")) {
+      await approveBooking(bookingId, button);
+
+      return;
+    }
+
+    /* -----------------------------------------------
+               CANCEL
+            ------------------------------------------------ */
+
+    if (button.classList.contains("cancel-btn")) {
+      await cancelBooking(bookingId, button);
+
+      return;
+    }
+
+    /* -----------------------------------------------
+               VIEW
+            ------------------------------------------------ */
+
+    if (button.classList.contains("view-btn")) {
+      await viewBooking(bookingId);
+    }
+  });
+}
+
+/* ============================================================
+   APPROVE BOOKING
+   ============================================================ */
+
+async function approveBooking(bookingId, button) {
+  if (!bookingId) {
+    return;
   }
 
-  // ========================================================
-  // ESCAPE HTML
-  // ========================================================
+  const confirmed = window.confirm(
+    `Approve booking #${bookingId}?\n\n` +
+      `The customer will be notified by email.`,
+  );
 
-  function escapeHtml(value) {
-    return String(value ?? "")
-      .replaceAll("&", "&amp;")
-      .replaceAll("<", "&lt;")
-      .replaceAll(">", "&gt;")
-      .replaceAll('"', "&quot;")
-      .replaceAll("'", "&#039;");
+  if (!confirmed) {
+    return;
   }
 
-  // ========================================================
-  // BOOKING DETAILS
-  // ========================================================
+  const originalHTML = button.innerHTML;
 
-  async function viewBooking(id) {
-    try {
-      const data = await api(`/admin/booking/${id}`);
+  setButtonLoading(button, "Approving...");
 
-      const booking = data.booking || data;
+  try {
+    const response = await fetchWithTimeout(
+      `/admin/update-status/${bookingId}`,
+      {
+        method: "POST",
+
+        headers: {
+          "Content-Type": "application/json",
+
+          Accept: "application/json",
+        },
 
-      let modal = getElement("bookingDetailsModal");
+        body: JSON.stringify({
+          status: "confirmed",
+        }),
+      },
+    );
+
+    const data = await parseResponse(response);
 
-      if (!modal) {
-        modal = document.createElement("div");
+    if (!response.ok) {
+      throw new Error(
+        data.message || data.error || `Approval failed (${response.status})`,
+      );
+    }
 
-        modal.id = "bookingDetailsModal";
+    if (data.success === false) {
+      throw new Error(data.message || data.error || "Booking approval failed.");
+    }
 
-        modal.style.cssText = `
-                    position: fixed;
-                    inset: 0;
-                    z-index: 99990;
+    showToast("Booking approved successfully.", "success");
 
-                    display: flex;
-                    align-items: center;
-                    justify-content: center;
+    /*
+     * IMPORTANT:
+     *
+     * The backend should save the booking first
+     * and send the customer email in the background.
+     *
+     * Therefore this request should return quickly
+     * and never remain stuck waiting for Resend.
+     */
 
-                    padding: 20px;
+    setButtonSuccess(button, "Approved");
 
-                    background:
-                        rgba(3,30,52,.60);
+    setTimeout(function () {
+      window.location.reload();
+    }, 900);
+  } catch (error) {
+    console.error("APPROVE BOOKING ERROR:", error);
 
-                    backdrop-filter:
-                        blur(7px);
-                `;
+    restoreButton(button, originalHTML);
 
-        document.body.appendChild(modal);
-      }
+    showToast(error.message || "Unable to approve the booking.", "error");
+  }
+}
 
-      const fields = [
-        ["Student", booking.name],
+/* ============================================================
+   CANCEL BOOKING
+   ============================================================ */
 
-        ["Email", booking.email],
+async function cancelBooking(bookingId, button) {
+  if (!bookingId) {
+    return;
+  }
 
-        ["Phone", booking.phone],
+  const confirmed = window.confirm(`Cancel booking #${bookingId}?`);
 
-        ["Lesson", booking.lesson_type],
+  if (!confirmed) {
+    return;
+  }
 
-        ["Package", booking.package],
+  const originalHTML = button.innerHTML;
 
-        ["Date", booking.lesson_date],
+  setButtonLoading(button, "Cancelling...");
 
-        ["Time", booking.lesson_time],
+  try {
+    const response = await fetchWithTimeout(
+      `/admin/update-status/${bookingId}`,
+      {
+        method: "POST",
 
-        ["Price", booking.price],
+        headers: {
+          "Content-Type": "application/json",
 
-        ["Status", booking.status],
+          Accept: "application/json",
+        },
 
-        ["Payment", booking.payment_status],
+        body: JSON.stringify({
+          status: "cancelled",
+        }),
+      },
+    );
 
-        ["Payment Method", booking.payment_method],
+    const data = await parseResponse(response);
 
-        ["Created", booking.created_at],
-      ];
+    if (!response.ok) {
+      throw new Error(
+        data.message ||
+          data.error ||
+          `Cancellation failed (${response.status})`,
+      );
+    }
 
-      modal.innerHTML = `
+    if (data.success === false) {
+      throw new Error(
+        data.message || data.error || "Booking cancellation failed.",
+      );
+    }
 
-                <div
-                    style="
-                        width:min(760px,100%);
-                        max-height:90vh;
-                        overflow:auto;
+    showToast("Booking cancelled successfully.", "success");
 
-                        background:#ffffff;
+    setButtonSuccess(button, "Cancelled");
 
-                        border-radius:24px;
+    setTimeout(function () {
+      window.location.reload();
+    }, 900);
+  } catch (error) {
+    console.error("CANCEL BOOKING ERROR:", error);
 
-                        padding:28px;
+    restoreButton(button, originalHTML);
 
-                        box-shadow:
-                            0 30px 90px
-                            rgba(0,0,0,.30);
-                    "
-                >
+    showToast(error.message || "Unable to cancel the booking.", "error");
+  }
+}
 
-                    <div
-                        style="
-                            display:flex;
-                            align-items:center;
-                            justify-content:space-between;
+/* ============================================================
+   VIEW BOOKING
+   ============================================================ */
 
-                            gap:20px;
+async function viewBooking(bookingId) {
+  try {
+    const response = await fetchWithTimeout(`/admin/api/booking/${bookingId}`, {
+      method: "GET",
 
-                            margin-bottom:24px;
-                        "
-                    >
+      headers: {
+        Accept: "application/json",
+      },
+    });
 
-                        <div>
+    const data = await parseResponse(response);
 
-                            <div
-                                style="
-                                    color:#087fc1;
-                                    font-size:11px;
-                                    font-weight:800;
+    if (!response.ok) {
+      throw new Error(data.message || data.error || "Unable to load booking.");
+    }
 
-                                    text-transform:
-                                        uppercase;
+    displayBookingModal(data.booking || data);
+  } catch (error) {
+    console.error("VIEW BOOKING ERROR:", error);
 
-                                    letter-spacing:.12em;
-                                "
-                            >
-                                Booking Details
-                            </div>
+    showToast(error.message || "Unable to load booking.", "error");
+  }
+}
 
+/* ============================================================
+   BOOKING MODAL
+   ============================================================ */
 
-                            <h2
-                                style="
-                                    margin:5px 0 0;
-                                    color:#063b73;
-                                "
-                            >
-                                ${escapeHtml(booking.name || "Student")}
-                            </h2>
+function displayBookingModal(booking) {
+  const existing = document.getElementById("adminBookingModal");
 
-                        </div>
+  if (existing) {
+    existing.remove();
+  }
 
+  const modal = document.createElement("div");
 
-                        <button
-                            type="button"
-                            id="closeBookingModal"
+  modal.id = "adminBookingModal";
 
-                            style="
-                                width:42px;
-                                height:42px;
+  modal.className = "admin-modal-overlay";
 
-                                border:0;
-                                border-radius:12px;
+  modal.innerHTML = `
 
-                                background:#eef6fa;
+        <div class="admin-modal">
 
-                                color:#17324d;
+            <button
+                type="button"
+                class="admin-modal-close"
+                aria-label="Close"
+            >
+                &times;
+            </button>
 
-                                cursor:pointer;
 
-                                font-size:22px;
-                                font-weight:800;
-                            "
-                        >
-                            ×
-                        </button>
+            <div class="admin-modal-header">
 
-                    </div>
+                <div class="admin-modal-icon">
 
-
-                    <div
-                        style="
-                            display:grid;
-
-                            grid-template-columns:
-                                repeat(
-                                    auto-fit,
-                                    minmax(
-                                        200px,
-                                        1fr
-                                    )
-                                );
-
-                            gap:12px;
-                        "
-                    >
-
-                        ${fields
-                          .map(function ([label, value]) {
-                            return `
-
-                                    <div
-                                        style="
-                                            padding:15px;
-
-                                            border:
-                                                1px solid
-                                                #e3edf3;
-
-                                            border-radius:
-                                                14px;
-
-                                            background:
-                                                #fbfdfe;
-                                        "
-                                    >
-
-                                        <div
-                                            style="
-                                                color:#71869a;
-
-                                                font-size:10px;
-
-                                                font-weight:800;
-
-                                                text-transform:
-                                                    uppercase;
-
-                                                letter-spacing:.07em;
-                                            "
-                                        >
-                                            ${escapeHtml(label)}
-                                        </div>
-
-
-                                        <div
-                                            style="
-                                                margin-top:7px;
-
-                                                color:#17324d;
-
-                                                font-weight:700;
-
-                                                word-break:
-                                                    break-word;
-                                            "
-                                        >
-                                            ${escapeHtml(value || "—")}
-                                        </div>
-
-                                    </div>
-
-                                `;
-                          })
-                          .join("")}
-
-                    </div>
-
-
-                    <div
-                        style="
-                            display:flex;
-                            gap:10px;
-                            flex-wrap:wrap;
-
-                            margin-top:24px;
-                        "
-                    >
-
-                        ${
-                          booking.status !== "confirmed"
-                            ? `
-
-                                    <button
-                                        type="button"
-
-                                        class="modal-confirm"
-
-                                        data-id="${escapeHtml(booking.id)}"
-
-                                        style="
-                                            border:0;
-
-                                            border-radius:11px;
-
-                                            padding:12px 17px;
-
-                                            background:#14834b;
-
-                                            color:#fff;
-
-                                            font-weight:800;
-
-                                            cursor:pointer;
-                                        "
-                                    >
-                                        ✓ Approve
-                                    </button>
-
-                                `
-                            : ""
-                        }
-
-
-                        ${
-                          booking.status !== "rejected"
-                            ? `
-
-                                    <button
-                                        type="button"
-
-                                        class="modal-reject"
-
-                                        data-id="${escapeHtml(booking.id)}"
-
-                                        style="
-                                            border:0;
-
-                                            border-radius:11px;
-
-                                            padding:12px 17px;
-
-                                            background:#b42323;
-
-                                            color:#fff;
-
-                                            font-weight:800;
-
-                                            cursor:pointer;
-                                        "
-                                    >
-                                        × Reject
-                                    </button>
-
-                                `
-                            : ""
-                        }
-
-
-                        ${
-                          booking.status === "confirmed"
-                            ? `
-
-                                    <button
-                                        type="button"
-
-                                        class="modal-paid"
-
-                                        data-id="${escapeHtml(booking.id)}"
-
-                                        style="
-                                            border:0;
-
-                                            border-radius:11px;
-
-                                            padding:12px 17px;
-
-                                            background:#087fc1;
-
-                                            color:#fff;
-
-                                            font-weight:800;
-
-                                            cursor:pointer;
-                                        "
-                                    >
-                                        $ Mark Paid
-                                    </button>
-
-                                `
-                            : ""
-                        }
-
-                    </div>
+                    <i class="fas fa-calendar-check"></i>
 
                 </div>
-            `;
-
-      // ------------------------------------------------
-      // CLOSE
-      // ------------------------------------------------
-
-      getElement("closeBookingModal")?.addEventListener("click", function () {
-        modal.remove();
-      });
-
-      // ------------------------------------------------
-      // CLICK OUTSIDE
-      // ------------------------------------------------
-
-      modal.addEventListener("click", function (event) {
-        if (event.target === modal) {
-          modal.remove();
-        }
-      });
-
-      // ------------------------------------------------
-      // APPROVE
-      // ------------------------------------------------
-
-      modal
-        .querySelector(".modal-confirm")
-        ?.addEventListener("click", async function () {
-          await changeStatus(this.dataset.id, "confirmed", this);
 
-          modal.remove();
-        });
-
-      // ------------------------------------------------
-      // REJECT
-      // ------------------------------------------------
-
-      modal
-        .querySelector(".modal-reject")
-        ?.addEventListener("click", async function () {
-          await changeStatus(this.dataset.id, "rejected", this);
-
-          modal.remove();
-        });
-
-      // ------------------------------------------------
-      // PAID
-      // ------------------------------------------------
-
-      modal
-        .querySelector(".modal-paid")
-        ?.addEventListener("click", async function () {
-          await updatePayment(this.dataset.id, "paid", this);
-
-          modal.remove();
-        });
-    } catch (error) {
-      console.error("Booking details error:", error);
-
-      showToast(error.message, "error");
-    }
-  }
-
-  // ========================================================
-  // CHANGE BOOKING STATUS
-  // ========================================================
-
-  async function changeStatus(id, status, button) {
-    const action = status === "confirmed" ? "approve" : "reject";
-
-    if (!window.confirm(`Are you sure you want to ${action} this booking?`)) {
-      return;
-    }
 
-    try {
-      setButtonLoading(
-        button,
-        true,
-
-        status === "confirmed" ? "Approving..." : "Rejecting...",
-      );
+                <div>
 
-      const data = await api(
-        `/admin/update-status/${id}`,
+                    <h2>
+                        Booking #${escapeHTML(booking.id ?? "")}
+                    </h2>
 
-        {
-          method: "POST",
-
-          body: JSON.stringify({
-            status: status,
-          }),
-        },
-      );
-
-      showToast(data.message || "Booking updated successfully.");
-
-      setTimeout(function () {
-        window.location.reload();
-      }, 600);
-    } catch (error) {
-      setButtonLoading(button, false);
+                    <p>
+                        Booking details
+                    </p>
 
-      showToast(error.message, "error");
-    }
-  }
+                </div>
 
-  // ========================================================
-  // PAYMENT STATUS
-  // ========================================================
+            </div>
 
-  async function updatePayment(id, paymentStatus, button) {
-    const message =
-      paymentStatus === "paid"
-        ? "Mark this booking as PAID?"
-        : "Return this payment to PENDING?";
 
-    if (!window.confirm(message)) {
-      return;
-    }
+            <div class="admin-modal-body">
 
-    try {
-      setButtonLoading(button, true, "Saving...");
+                ${bookingDetail("Student", booking.name)}
 
-      const data = await api(
-        `/admin/update-payment/${id}`,
+                ${bookingDetail("Email", booking.email)}
 
-        {
-          method: "POST",
+                ${bookingDetail("Phone", booking.phone)}
 
-          body: JSON.stringify({
-            payment_status: paymentStatus,
-          }),
-        },
-      );
+                ${bookingDetail("Lesson", booking.lesson_type)}
 
-      showToast(data.message || "Payment updated successfully.");
+                ${bookingDetail("Package", booking.package)}
 
-      setTimeout(function () {
-        window.location.reload();
-      }, 600);
-    } catch (error) {
-      setButtonLoading(button, false);
+                ${bookingDetail("Date", booking.lesson_date)}
 
-      showToast(error.message, "error");
-    }
-  }
+                ${bookingDetail("Time", booking.lesson_time)}
 
-  // ========================================================
-  // RESEND EMAIL
-  // ========================================================
+                ${bookingDetail("Payment", booking.payment_status)}
 
-  async function resendEmail(id, type, button) {
-    const endpoint =
-      type === "approval"
-        ? `/admin/resend-approval/${id}`
-        : `/admin/resend-rejection/${id}`;
+                ${bookingDetail("Status", booking.status)}
 
-    try {
-      setButtonLoading(button, true, "Sending...");
-
-      const data = await api(
-        endpoint,
+            </div>
 
-        {
-          method: "POST",
+        </div>
 
-          body: "{}",
-        },
-      );
+    `;
 
-      showToast(data.message || "Email sent successfully.");
+  document.body.appendChild(modal);
 
-      setButtonLoading(button, false);
-    } catch (error) {
-      setButtonLoading(button, false);
-
-      showToast(error.message, "error");
-    }
-  }
-
-  // ========================================================
-  // BIND BUTTONS
-  // ========================================================
-
-  function bindBookingButtons() {
-    // ----------------------------------------------------
-    // VIEW
-    // ----------------------------------------------------
-
-    document.querySelectorAll(".view-btn").forEach(function (button) {
-      if (button.dataset.bound) {
-        return;
-      }
-
-      button.dataset.bound = "true";
-
-      button.addEventListener("click", function () {
-        viewBooking(this.dataset.id);
-      });
-    });
-
-    // ----------------------------------------------------
-    // APPROVE
-    // ----------------------------------------------------
-
-    document.querySelectorAll(".confirm-btn").forEach(function (button) {
-      if (button.dataset.bound) {
-        return;
-      }
-
-      button.dataset.bound = "true";
-
-      button.addEventListener("click", function () {
-        changeStatus(this.dataset.id, "confirmed", this);
-      });
-    });
-
-    // ----------------------------------------------------
-    // REJECT
-    // ----------------------------------------------------
+  const closeButton = modal.querySelector(".admin-modal-close");
 
-    document.querySelectorAll(".cancel-btn").forEach(function (button) {
-      if (button.dataset.bound) {
-        return;
-      }
+  closeButton.addEventListener("click", function () {
+    modal.remove();
+  });
 
-      button.dataset.bound = "true";
-
-      button.addEventListener("click", function () {
-        changeStatus(this.dataset.id, "rejected", this);
-      });
-    });
-
-    // ----------------------------------------------------
-    // PAID
-    // ----------------------------------------------------
-
-    document.querySelectorAll(".paid-btn").forEach(function (button) {
-      if (button.dataset.bound) {
-        return;
-      }
-
-      button.dataset.bound = "true";
-
-      button.addEventListener("click", function () {
-        updatePayment(this.dataset.id, "paid", this);
-      });
-    });
-
-    // ----------------------------------------------------
-    // PENDING PAYMENT
-    // ----------------------------------------------------
-
-    document
-      .querySelectorAll(".pending-payment-btn")
-      .forEach(function (button) {
-        if (button.dataset.bound) {
-          return;
-        }
-
-        button.dataset.bound = "true";
-
-        button.addEventListener("click", function () {
-          updatePayment(this.dataset.id, "pending", this);
-        });
-      });
-
-    // ----------------------------------------------------
-    // RESEND APPROVAL
-    // ----------------------------------------------------
-
-    document
-      .querySelectorAll(".resend-approval-btn")
-      .forEach(function (button) {
-        if (button.dataset.bound) {
-          return;
-        }
-
-        button.dataset.bound = "true";
-
-        button.addEventListener("click", function () {
-          resendEmail(this.dataset.id, "approval", this);
-        });
-      });
-
-    // ----------------------------------------------------
-    // RESEND REJECTION
-    // ----------------------------------------------------
-
-    document
-      .querySelectorAll(".resend-rejection-btn")
-      .forEach(function (button) {
-        if (button.dataset.bound) {
-          return;
-        }
-
-        button.dataset.bound = "true";
-
-        button.addEventListener("click", function () {
-          resendEmail(this.dataset.id, "rejection", this);
-        });
-      });
-  }
-
-  // ========================================================
-  // SEARCH
-  // ========================================================
-
-  function initializeSearch() {
-    const input = getElement("searchInput");
-
-    const table = getElement("bookingTable");
-
-    if (!input || !table) {
-      return;
-    }
-
-    input.addEventListener("input", function () {
-      const search = input.value.trim().toLowerCase();
-
-      table.querySelectorAll("tbody tr").forEach(function (row) {
-        const text = row.textContent.toLowerCase();
-
-        row.style.display = !search || text.includes(search) ? "" : "none";
-      });
-    });
-  }
-
-  // ========================================================
-  // STATUS FILTER
-  // ========================================================
-
-  function initializeStatusFilter() {
-    const filter = getElement("statusFilter");
-
-    const table = getElement("bookingTable");
-
-    if (!filter || !table) {
-      return;
-    }
-
-    filter.addEventListener("change", function () {
-      const selected = filter.value.trim().toLowerCase();
-
-      table.querySelectorAll("tbody tr").forEach(function (row) {
-        if (!selected) {
-          row.style.display = "";
-
-          return;
-        }
-
-        const rowStatus = (row.dataset.status || row.textContent).toLowerCase();
-
-        row.style.display = rowStatus.includes(selected) ? "" : "none";
-      });
-    });
-  }
-
-  // ========================================================
-  // DATE FILTER
-  // ========================================================
-
-  function initializeDateFilter() {
-    const input = getElement("dateFilter");
-
-    const table = getElement("bookingTable");
-
-    if (!input || !table) {
-      return;
-    }
-
-    input.addEventListener("change", function () {
-      const selected = input.value;
-
-      table.querySelectorAll("tbody tr").forEach(function (row) {
-        if (!selected) {
-          row.style.display = "";
-
-          return;
-        }
-
-        const rowDate = row.dataset.date || "";
-
-        row.style.display = rowDate === selected ? "" : "none";
-      });
-    });
-  }
-
-  // ========================================================
-  // DASHBOARD STATS
-  // ========================================================
-
-  async function refreshStats() {
-    try {
-      const data = await api("/admin/api/stats");
-
-      const stats = data.stats || {};
-
-      const mapping = {
-        today_lessons: ["todayLessons", "today-lessons"],
-
-        pending_approvals: ["pendingApprovals", "pending-approvals"],
-
-        pending_payments: ["pendingPayments", "pending-payments"],
-
-        confirmed_lessons: ["confirmedLessons", "confirmed-lessons"],
-
-        rejected_bookings: ["rejectedBookings", "rejected-bookings"],
-
-        paid_bookings: ["paidBookings", "paid-bookings"],
-
-        pay_later_bookings: ["payLaterBookings", "pay-later-bookings"],
-      };
-
-      Object.entries(mapping).forEach(function ([key, ids]) {
-        if (stats[key] === undefined) {
-          return;
-        }
-
-        ids.forEach(function (id) {
-          const element = getElement(id);
-
-          if (element) {
-            element.textContent = stats[key];
-          }
-        });
-      });
-
-      const revenue = getElement("dashboardRevenue");
-
-      if (revenue && stats.revenue !== undefined) {
-        revenue.textContent = Number(stats.revenue).toLocaleString("en-US", {
-          style: "currency",
-
-          currency: "USD",
-        });
-      }
-    } catch (error) {
-      console.warn("Admin statistics refresh failed:", error.message);
-    }
-  }
-
-  // ========================================================
-  // AUTO REFRESH
-  // ========================================================
-
-  function initializeAutoRefresh() {
-    setInterval(function () {
-      refreshStats();
-    }, STATS_REFRESH_MS);
-  }
-
-  // ========================================================
-  // ESCAPE TO CLOSE MODAL
-  // ========================================================
-
-  document.addEventListener("keydown", function (event) {
-    if (event.key !== "Escape") {
-      return;
-    }
-
-    const modal = getElement("bookingDetailsModal");
-
-    if (modal) {
+  modal.addEventListener("click", function (event) {
+    if (event.target === modal) {
       modal.remove();
     }
   });
+}
 
-  // ========================================================
-  // INITIALIZE ADMIN
-  // ========================================================
+/* ============================================================
+   BOOKING DETAIL
+   ============================================================ */
 
-  function initializeAdmin() {
-    console.log("====================================");
+function bookingDetail(label, value) {
+  return `
 
-    console.log("Millrod Swim Academy Admin");
+        <div class="admin-detail-row">
 
-    console.log("Security timer: 5 minutes");
+            <span>
+                ${escapeHTML(label)}
+            </span>
 
-    console.log("====================================");
+            <strong>
+                ${escapeHTML(value ?? "—")}
+            </strong>
 
-    // ----------------------------------------------------
-    // START VISIBLE TIMER
-    // ----------------------------------------------------
+        </div>
 
-    startTimer();
+    `;
+}
 
-    // ----------------------------------------------------
-    // ACTIVITY TRACKING
-    // ----------------------------------------------------
+/* ============================================================
+   DASHBOARD STATISTICS
+   ============================================================ */
 
-    initializeActivityTracking();
+async function loadDashboardStats() {
+  try {
+    const response = await fetchWithTimeout("/admin/api/stats", {
+      method: "GET",
 
-    // ----------------------------------------------------
-    // BOOKING BUTTONS
-    // ----------------------------------------------------
+      headers: {
+        Accept: "application/json",
+      },
+    });
 
-    bindBookingButtons();
+    if (!response.ok) {
+      throw new Error(`Stats request failed (${response.status})`);
+    }
 
-    // ----------------------------------------------------
-    // SEARCH / FILTERS
-    // ----------------------------------------------------
+    const data = await parseResponse(response);
 
-    initializeSearch();
+    if (!data) {
+      return;
+    }
 
-    initializeStatusFilter();
+    updateStat("todayLessons", data.today_lessons);
 
-    initializeDateFilter();
+    updateStat("pendingPayments", data.pending_payments);
 
-    // ----------------------------------------------------
-    // STATS
-    // ----------------------------------------------------
+    updateStat("confirmedLessons", data.confirmed_lessons);
 
-    refreshStats();
+    updateStat("revenue", data.revenue);
+  } catch (error) {
+    console.warn("Unable to refresh dashboard statistics:", error);
+  }
+}
 
-    initializeAutoRefresh();
+/* ============================================================
+   UPDATE STAT
+   ============================================================ */
 
-    // ----------------------------------------------------
-    // VERIFY TIMER EXISTS
-    // ----------------------------------------------------
+function updateStat(id, value) {
+  const element = document.getElementById(id);
 
-    const timer = getTimer();
+  if (!element) {
+    return;
+  }
 
-    if (timer.countdown) {
-      console.log("✓ Admin countdown found.");
-    } else {
-      console.error("✗ #sessionCountdown was NOT found in admin.html.");
+  if (value === undefined || value === null) {
+    return;
+  }
+
+  element.textContent = value;
+}
+
+/* ============================================================
+   BUTTON LOADING
+   ============================================================ */
+
+function setButtonLoading(button, text) {
+  if (!button) {
+    return;
+  }
+
+  button.disabled = true;
+
+  button.dataset.originalHTML = button.innerHTML;
+
+  button.innerHTML = `
+
+        <i class="fas fa-spinner fa-spin"></i>
+
+        <span>
+            ${escapeHTML(text)}
+        </span>
+
+    `;
+
+  button.classList.add("is-loading");
+}
+
+/* ============================================================
+   BUTTON SUCCESS
+   ============================================================ */
+
+function setButtonSuccess(button, text) {
+  if (!button) {
+    return;
+  }
+
+  button.disabled = true;
+
+  button.innerHTML = `
+
+        <i class="fas fa-check"></i>
+
+        <span>
+            ${escapeHTML(text)}
+        </span>
+
+    `;
+
+  button.classList.remove("is-loading");
+
+  button.classList.add("is-success");
+}
+
+/* ============================================================
+   RESTORE BUTTON
+   ============================================================ */
+
+function restoreButton(button, html) {
+  if (!button) {
+    return;
+  }
+
+  button.disabled = false;
+
+  button.innerHTML = html || button.dataset.originalHTML || "Try Again";
+
+  button.classList.remove("is-loading", "is-success");
+}
+
+/* ============================================================
+   FETCH WITH TIMEOUT
+   ============================================================ */
+
+async function fetchWithTimeout(
+  url,
+  options = {},
+  timeout = ADMIN_CONFIG.requestTimeout,
+) {
+  const controller = new AbortController();
+
+  const timeoutId = window.setTimeout(function () {
+    controller.abort();
+  }, timeout);
+
+  try {
+    return await fetch(url, {
+      ...options,
+
+      signal: controller.signal,
+    });
+  } catch (error) {
+    if (error.name === "AbortError") {
+      throw new Error("The server took too long to respond. Please try again.");
+    }
+
+    throw error;
+  } finally {
+    window.clearTimeout(timeoutId);
+  }
+}
+
+/* ============================================================
+   PARSE RESPONSE
+   ============================================================ */
+
+async function parseResponse(response) {
+  const contentType = response.headers.get("content-type") || "";
+
+  if (contentType.includes("application/json")) {
+    return await response.json();
+  }
+
+  const text = await response.text();
+
+  return {
+    success: response.ok,
+
+    message: text,
+  };
+}
+
+/* ============================================================
+   LOGOUT PROTECTION
+   ============================================================ */
+
+function setupLogoutProtection() {
+  const logoutLinks = document.querySelectorAll('a[href*="/admin/logout"]');
+
+  logoutLinks.forEach(function (link) {
+    link.addEventListener("click", function () {
+      /*
+       * Let the normal logout route handle logout.
+       */
+    });
+  });
+}
+
+/* ============================================================
+   5-MINUTE SESSION TIMER
+   ============================================================ */
+
+function initializeSessionTimer() {
+  const countdown = document.getElementById("sessionCountdown");
+
+  const timer = document.getElementById("adminSessionTimer");
+
+  if (!countdown || !timer) {
+    return;
+  }
+
+  const SESSION_SECONDS = ADMIN_CONFIG.sessionMinutes * 60;
+
+  let remaining = SESSION_SECONDS;
+
+  function update() {
+    const minutes = Math.floor(remaining / 60);
+
+    const seconds = remaining % 60;
+
+    countdown.textContent =
+      `${String(minutes).padStart(2, "0")}:` +
+      `${String(seconds).padStart(2, "0")}`;
+
+    timer.classList.remove("warning", "critical");
+
+    if (remaining <= 30) {
+      timer.classList.add("critical");
+    } else if (remaining <= 60) {
+      timer.classList.add("warning");
     }
   }
 
-  // ========================================================
-  // START WHEN PAGE IS READY
-  // ========================================================
+  update();
 
-  if (document.readyState === "loading") {
-    document.addEventListener("DOMContentLoaded", initializeAdmin);
-  } else {
-    initializeAdmin();
+  window.setInterval(function () {
+    remaining--;
+
+    if (remaining <= 0) {
+      countdown.textContent = "00:00";
+
+      window.location.href = "/admin/logout";
+
+      return;
+    }
+
+    update();
+  }, 1000);
+}
+
+/* ============================================================
+   TOAST
+   ============================================================ */
+
+function showToast(message, type = "info") {
+  let container = document.getElementById("adminToastContainer");
+
+  if (!container) {
+    container = document.createElement("div");
+
+    container.id = "adminToastContainer";
+
+    container.className = "admin-toast-container";
+
+    document.body.appendChild(container);
   }
-})();
+
+  const toast = document.createElement("div");
+
+  toast.className = `admin-toast ${type}`;
+
+  let icon = "fa-circle-info";
+
+  if (type === "success") {
+    icon = "fa-circle-check";
+  } else if (type === "error") {
+    icon = "fa-circle-exclamation";
+  } else if (type === "warning") {
+    icon = "fa-triangle-exclamation";
+  }
+
+  toast.innerHTML = `
+
+        <i class="fas ${icon}"></i>
+
+        <span>
+            ${escapeHTML(message)}
+        </span>
+
+        <button
+            type="button"
+            aria-label="Close"
+        >
+            &times;
+        </button>
+
+    `;
+
+  const close = toast.querySelector("button");
+
+  close.addEventListener("click", function () {
+    toast.remove();
+  });
+
+  container.appendChild(toast);
+
+  window.setTimeout(function () {
+    if (toast.isConnected) {
+      toast.classList.add("closing");
+
+      window.setTimeout(function () {
+        toast.remove();
+      }, 250);
+    }
+  }, 5000);
+}
+
+/* ============================================================
+   ESCAPE HTML
+   ============================================================ */
+
+function escapeHTML(value) {
+  const div = document.createElement("div");
+
+  div.textContent = String(value ?? "");
+
+  return div.innerHTML;
+}
+
+/* ============================================================
+   GLOBAL ERROR HANDLING
+   ============================================================ */
+
+window.addEventListener("unhandledrejection", function (event) {
+  console.error("Unhandled admin error:", event.reason);
+});
+
+/* ============================================================
+   GLOBAL API
+   ============================================================ */
+
+window.AdminDashboard = {
+  approveBooking,
+
+  cancelBooking,
+
+  viewBooking,
+
+  loadDashboardStats,
+
+  showToast,
+};

@@ -7,309 +7,43 @@
 
     <meta
       name="description"
-      content="Millrod Swim Academy professional administrator dashboard"
+      content="Millrod Swim Academy professional admin dashboard"
     />
 
     <title>Millrod Swim Academy | Admin Dashboard</title>
 
-    <!-- =========================================================
+    <!-- ======================================================
          ADMIN CSS
-    ========================================================== -->
+    ======================================================= -->
 
     <link
       rel="stylesheet"
       href="{{ url_for('static', filename='admin.css') }}"
     />
 
-    <!-- =========================================================
+    <!-- ======================================================
          FONT AWESOME
-    ========================================================== -->
+    ======================================================= -->
 
     <link
       rel="stylesheet"
       href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css"
     />
-
-    <!-- =========================================================
-         ADMIN PAGE OVERRIDES
-         NO HAMBURGER / NO MOBILE NAV
-    ========================================================== -->
-
-    <style>
-      /*
-         * IMPORTANT
-         * This admin dashboard ALWAYS uses the desktop sidebar.
-         *
-         * There is intentionally NO hamburger button in this file.
-         */
-
-      html,
-      body {
-        margin: 0;
-
-        min-height: 100%;
-      }
-
-      body {
-        overflow-x: auto;
-      }
-
-      /* =====================================================
-           DESKTOP DASHBOARD
-        ====================================================== */
-
-      .dashboard {
-        display: grid !important;
-
-        grid-template-columns:
-          260px
-          minmax(900px, 1fr) !important;
-
-        min-width: 1160px;
-
-        min-height: 100vh;
-      }
-
-      /* =====================================================
-           SIDEBAR
-        ====================================================== */
-
-      .sidebar {
-        display: flex !important;
-
-        visibility: visible !important;
-
-        width: 260px !important;
-
-        min-width: 260px !important;
-
-        height: 100vh;
-
-        position: sticky;
-
-        top: 0;
-
-        transform: none !important;
-      }
-
-      .sidebar nav {
-        display: flex !important;
-
-        visibility: visible !important;
-
-        flex-direction: column !important;
-      }
-
-      .sidebar nav a {
-        display: flex !important;
-
-        visibility: visible !important;
-      }
-
-      .sidebar nav a span {
-        display: inline !important;
-      }
-
-      /* =====================================================
-           TOP BAR
-        ====================================================== */
-
-      .topbar {
-        display: flex !important;
-
-        flex-direction: row !important;
-
-        align-items: center !important;
-
-        justify-content: space-between !important;
-
-        gap: 20px;
-      }
-
-      .topbar-actions {
-        display: flex !important;
-
-        align-items: center !important;
-
-        justify-content: flex-end !important;
-
-        flex-wrap: nowrap !important;
-
-        gap: 10px;
-      }
-
-      /* =====================================================
-           SECURITY TIMER
-        ====================================================== */
-
-      .session-timer {
-        display: inline-flex !important;
-
-        align-items: center;
-
-        gap: 10px;
-
-        min-width: 155px;
-
-        padding: 9px 14px;
-
-        border: 1px solid rgba(8, 127, 193, 0.18);
-
-        border-radius: 14px;
-
-        background: linear-gradient(135deg, #f4fbff, #ffffff);
-
-        box-shadow: 0 8px 24px rgba(6, 59, 115, 0.1);
-      }
-
-      .session-timer-icon {
-        width: 35px;
-
-        height: 35px;
-
-        min-width: 35px;
-
-        display: grid;
-
-        place-items: center;
-
-        border-radius: 10px;
-
-        background: #e7f6fd;
-
-        color: #087fc1;
-      }
-
-      .session-timer-content {
-        display: flex;
-
-        flex-direction: column;
-      }
-
-      .session-timer-label {
-        font-size: 10px;
-
-        font-weight: 800;
-
-        text-transform: uppercase;
-
-        letter-spacing: 0.08em;
-
-        color: #71869a;
-      }
-
-      #sessionCountdown {
-        margin-top: 4px;
-
-        color: #063b73;
-
-        font-size: 18px;
-
-        font-weight: 900;
-
-        letter-spacing: 0.05em;
-
-        font-variant-numeric: tabular-nums;
-      }
-
-      /* =====================================================
-           TIMER WARNING
-        ====================================================== */
-
-      .session-timer.warning {
-        background: #fffaf0;
-
-        border-color: rgba(220, 145, 0, 0.45);
-      }
-
-      .session-timer.warning #sessionCountdown {
-        color: #9a5b00;
-      }
-
-      /* =====================================================
-           TIMER CRITICAL
-        ====================================================== */
-
-      .session-timer.critical {
-        background: #fff5f5;
-
-        border-color: rgba(190, 45, 45, 0.5);
-
-        animation: adminTimerPulse 1s ease-in-out infinite;
-      }
-
-      .session-timer.critical #sessionCountdown {
-        color: #b42323;
-      }
-
-      @keyframes adminTimerPulse {
-        50% {
-          transform: scale(1.025);
-        }
-      }
-
-      /* =====================================================
-           CONTENT
-        ====================================================== */
-
-      .content {
-        min-width: 900px;
-
-        width: 100%;
-      }
-
-      /* =====================================================
-           TABLE
-        ====================================================== */
-
-      .table-container {
-        width: 100%;
-
-        overflow-x: auto;
-      }
-
-      table {
-        min-width: 1050px;
-      }
-
-      /* =====================================================
-           REMOVE ANY POSSIBLE MOBILE CONTROLS
-        ====================================================== */
-
-      .menu-toggle,
-      .mobile-menu-toggle,
-      .sidebar-toggle,
-      .mobile-nav-toggle,
-      .hamburger,
-      .nav-toggle,
-      .mobile-menu,
-      .mobile-header,
-      .mobile-navbar,
-      .mobile-navigation {
-        display: none !important;
-
-        visibility: hidden !important;
-      }
-    </style>
   </head>
 
   <body>
-    <!-- ============================================================
-     ADMIN DASHBOARD
-============================================================= -->
+    <!-- ======================================================
+         DASHBOARD
+    ======================================================= -->
 
-    <div class="dashboard" id="dashboard">
-      <!-- ========================================================
-         SIDEBAR
-    ========================================================= -->
+    <div class="dashboard">
+      <!-- ====================================================
+           SIDEBAR
+      ===================================================== -->
 
-      <aside class="sidebar" id="adminSidebar">
-        <!-- BRAND -->
-
+      <aside class="sidebar">
         <div class="logo">
-          <div class="logo-icon">
-            <i class="fas fa-water"></i>
-          </div>
+          <i class="fas fa-water"></i>
 
           <div>
             <h2>Millrod Swim</h2>
@@ -318,162 +52,81 @@
           </div>
         </div>
 
-        <!-- =====================================================
+        <!-- ==================================================
              NAVIGATION
-        ====================================================== -->
+        =================================================== -->
 
-        <nav aria-label="Administrator navigation">
+        <nav aria-label="Admin navigation">
           <a href="#dashboard" class="active">
             <i class="fas fa-chart-line"></i>
 
-            <span> Dashboard </span>
+            <span>Dashboard</span>
           </a>
 
           <a href="#bookings">
             <i class="fas fa-calendar-check"></i>
 
-            <span> Bookings </span>
+            <span>Bookings</span>
           </a>
 
           <a href="#students">
             <i class="fas fa-users"></i>
 
-            <span> Students </span>
+            <span>Students</span>
           </a>
 
           <a href="#payments">
             <i class="fas fa-credit-card"></i>
 
-            <span> Payments </span>
+            <span>Payments</span>
           </a>
 
-          <a href="/" title="Return to main website">
-            <i class="fas fa-globe"></i>
+          <a href="/admin/logout">
+            <i class="fas fa-sign-out-alt"></i>
 
-            <span> Website </span>
-          </a>
-
-          <a href="/admin/logout" title="Logout">
-            <i class="fas fa-right-from-bracket"></i>
-
-            <span> Logout </span>
+            <span>Logout</span>
           </a>
         </nav>
-
-        <!-- =====================================================
-             SECURITY AREA
-        ====================================================== -->
-
-        <div
-          class="sidebar-security"
-          style="
-            margin-top: auto;
-            padding: 18px;
-            border-radius: 16px;
-            background: rgba(255, 255, 255, 0.08);
-            color: white;
-          "
-        >
-          <div
-            style="
-              display: flex;
-              align-items: center;
-              gap: 10px;
-              margin-bottom: 8px;
-            "
-          >
-            <i class="fas fa-shield-halved" style="color: #69d5ff"></i>
-
-            <strong> Secure Admin </strong>
-          </div>
-
-          <small style="opacity: 0.75; line-height: 1.5">
-            Administrator access is protected with email verification and
-            automatic session security.
-          </small>
-        </div>
       </aside>
 
-      <!-- ========================================================
-         MAIN CONTENT
-    ========================================================= -->
+      <!-- ====================================================
+           MAIN CONTENT
+      ===================================================== -->
 
-      <main class="content">
-        <!-- =====================================================
+      <main class="content" id="dashboard">
+        <!-- ==================================================
              TOP BAR
-        ====================================================== -->
+        =================================================== -->
 
         <header class="topbar">
           <div>
-            <div
-              style="
-                color: #087fc1;
-                font-size: 11px;
-                font-weight: 900;
-                text-transform: uppercase;
-                letter-spacing: 0.1em;
-                margin-bottom: 5px;
-              "
-            >
-              Millrod Swim Academy
-            </div>
-
             <h1>Admin Dashboard</h1>
 
-            <p>
-              Manage your swimming lessons, bookings, students and payments.
-            </p>
+            <p>Manage your swimming lessons, bookings, and payments.</p>
           </div>
 
-          <!-- =================================================
-                 TOP RIGHT
-            ================================================== -->
-
           <div class="topbar-actions">
-            <!-- =============================================
-                     5-MINUTE SECURITY TIMER
-                ============================================== -->
+            <!-- WEBSITE -->
 
-            <div
-              class="session-timer"
-              id="adminSessionTimer"
-              title="Automatic logout after 5 minutes of inactivity"
-              aria-live="polite"
+            <a
+              href="/"
+              class="home-btn"
+              title="Open Millrod Swim Academy website"
             >
-              <div class="session-timer-icon">
-                <i class="fas fa-shield-halved"></i>
-              </div>
-
-              <div class="session-timer-content">
-                <span class="session-timer-label"> Secure session </span>
-
-                <strong id="sessionCountdown"> 05:00 </strong>
-              </div>
-            </div>
-
-            <!-- =============================================
-                     MAIN WEBSITE
-                ============================================== -->
-
-            <a href="/" class="home-btn" title="Open main website">
               <i class="fas fa-home"></i>
 
-              <span> Website </span>
+              <span>Website</span>
             </a>
 
-            <!-- =============================================
-                     LOGOUT
-                ============================================== -->
+            <!-- LOGOUT -->
 
             <a href="/admin/logout" class="logout-btn" title="Logout">
-              <i class="fas fa-right-from-bracket"></i>
+              <i class="fas fa-sign-out-alt"></i>
 
-              <span> Logout </span>
+              <span>Logout</span>
             </a>
 
-            <!-- =============================================
-                     ADMIN
-                ============================================== -->
+            <!-- ADMIN -->
 
             <div class="admin-user">
               <i class="fas fa-user-circle"></i>
@@ -483,55 +136,12 @@
           </div>
         </header>
 
-        <!-- =====================================================
-             SECURITY NOTICE
-        ====================================================== -->
-
-        <section
-          style="
-            display: flex;
-            align-items: center;
-            gap: 14px;
-            margin-bottom: 24px;
-            padding: 16px 20px;
-            border: 1px solid #d9eef8;
-            border-radius: 16px;
-            background: linear-gradient(135deg, #effaff, #ffffff);
-          "
-        >
-          <div
-            style="
-              width: 42px;
-              height: 42px;
-              min-width: 42px;
-              display: grid;
-              place-items: center;
-              border-radius: 12px;
-              background: #dff5ff;
-              color: #087fc1;
-            "
-          >
-            <i class="fas fa-lock"></i>
-          </div>
-
-          <div>
-            <strong style="display: block; color: #063b73">
-              Secure Administrator Session
-            </strong>
-
-            <span style="color: #71869a; font-size: 13px">
-              Your session is automatically protected. The countdown above shows
-              your current security session.
-            </span>
-          </div>
-        </section>
-
-        <!-- =====================================================
+        <!-- ==================================================
              STATISTICS
-        ====================================================== -->
+        =================================================== -->
 
         <section class="stats" aria-label="Dashboard statistics">
-          <!-- TODAY -->
+          <!-- TODAY'S LESSONS -->
 
           <div class="card">
             <i class="fas fa-calendar-day"></i>
@@ -541,7 +151,7 @@
             <p>Today's Lessons</p>
           </div>
 
-          <!-- PENDING -->
+          <!-- PENDING PAYMENTS -->
 
           <div class="card">
             <i class="fas fa-hourglass-half"></i>
@@ -551,10 +161,10 @@
             <p>Pending Payments</p>
           </div>
 
-          <!-- CONFIRMED -->
+          <!-- CONFIRMED LESSONS -->
 
           <div class="card">
-            <i class="fas fa-circle-check"></i>
+            <i class="fas fa-check-circle"></i>
 
             <h3>{{ confirmed_lessons }}</h3>
 
@@ -572,36 +182,195 @@
           </div>
         </section>
 
-        <!-- =====================================================
-             BOOKINGS
-        ====================================================== -->
+        <!-- ==================================================
+             BOOKINGS SECTION
+        =================================================== -->
 
-        <section id="bookings" class="dashboard-section">
+        <!-- ==================================================
+             ADMIN CONTROL CENTER
+        =================================================== -->
+
+        <section
+          id="overview"
+          class="admin-control-center"
+          aria-label="Admin control center"
+        >
+          <div class="control-center-header">
+            <div>
+              <span class="eyebrow">
+                <i class="fas fa-sparkles"></i>
+                Control Center
+              </span>
+
+              <h2>Everything at a glance</h2>
+
+              <p>
+                Quickly review today's activity, manage bookings, monitor
+                payments, and keep your academy running smoothly.
+              </p>
+            </div>
+
+            <div class="control-center-actions">
+              <button
+                type="button"
+                class="quick-action"
+                id="refreshDashboardBtn"
+                title="Refresh the dashboard"
+              >
+                <i class="fas fa-rotate"></i>
+                <span>Refresh</span>
+              </button>
+
+              <a href="#bookings" class="quick-action primary">
+                <i class="fas fa-calendar-check"></i>
+                <span>Manage Bookings</span>
+              </a>
+            </div>
+          </div>
+
+          <div class="admin-insight-grid">
+            <div class="insight-card">
+              <div class="insight-icon blue">
+                <i class="fas fa-calendar-day"></i>
+              </div>
+
+              <div>
+                <span class="insight-label">Today</span>
+                <strong>{{ today_lessons }}</strong>
+                <small>lessons scheduled</small>
+              </div>
+            </div>
+
+            <div class="insight-card">
+              <div class="insight-icon amber">
+                <i class="fas fa-hourglass-half"></i>
+              </div>
+
+              <div>
+                <span class="insight-label">Attention</span>
+                <strong>{{ pending_payments }}</strong>
+                <small>pending payments</small>
+              </div>
+            </div>
+
+            <div class="insight-card">
+              <div class="insight-icon green">
+                <i class="fas fa-circle-check"></i>
+              </div>
+
+              <div>
+                <span class="insight-label">Confirmed</span>
+                <strong>{{ confirmed_lessons }}</strong>
+                <small>confirmed lessons</small>
+              </div>
+            </div>
+
+            <div class="insight-card">
+              <div class="insight-icon purple">
+                <i class="fas fa-chart-line"></i>
+              </div>
+
+              <div>
+                <span class="insight-label">Revenue</span>
+                <strong>${{ revenue }}</strong>
+                <small>current revenue</small>
+              </div>
+            </div>
+          </div>
+
+          <div class="admin-health-row">
+            <div class="health-item">
+              <span class="health-dot"></span>
+              <div>
+                <strong>Admin security active</strong>
+                <small>Email verification + inactivity protection</small>
+              </div>
+            </div>
+
+            <div class="health-item">
+              <span class="health-dot"></span>
+              <div>
+                <strong>Booking system online</strong>
+                <small>Live booking management available</small>
+              </div>
+            </div>
+
+            <div class="health-item">
+              <span class="health-dot"></span>
+              <div>
+                <strong>Payments connected</strong>
+                <small>Stripe payment monitoring enabled</small>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section id="bookings" aria-labelledby="bookings-title">
+          <!-- SECTION HEADER -->
+
           <div class="section-header">
             <div>
-              <h2>
-                <i class="fas fa-calendar-check"></i>
-
-                Bookings
-              </h2>
+              <h2 id="bookings-title">Bookings</h2>
 
               <p>Review and manage swimming lesson requests.</p>
             </div>
           </div>
 
-          <!-- SEARCH -->
+          <!-- =================================================
+               SEARCH
+          ================================================== -->
 
-          <section class="search-bar">
-            <input
-              type="search"
-              id="searchInput"
-              placeholder="Search student name, email, phone, lesson..."
-              autocomplete="off"
-              aria-label="Search bookings"
-            />
+          <section class="booking-toolbar">
+            <div class="search-box">
+              <i class="fas fa-magnifying-glass"></i>
+
+              <input
+                type="search"
+                id="searchInput"
+                placeholder="Search name, email, phone, lesson, date..."
+                autocomplete="off"
+                aria-label="Search bookings"
+              />
+
+              <button
+                type="button"
+                id="clearSearchBtn"
+                class="clear-search"
+                aria-label="Clear search"
+                title="Clear search"
+              >
+                <i class="fas fa-xmark"></i>
+              </button>
+            </div>
+
+            <div class="booking-filters">
+              <select id="statusFilter" aria-label="Filter by booking status">
+                <option value="all">All statuses</option>
+                <option value="pending">Pending</option>
+                <option value="confirmed">Confirmed</option>
+                <option value="cancelled">Cancelled</option>
+              </select>
+
+              <select id="paymentFilter" aria-label="Filter by payment status">
+                <option value="all">All payments</option>
+                <option value="paid">Paid</option>
+                <option value="pending">Pending payment</option>
+              </select>
+
+              <button type="button" id="resetFiltersBtn" class="filter-reset">
+                <i class="fas fa-filter-circle-xmark"></i>
+                Reset
+              </button>
+            </div>
+
+            <div class="results-count" id="resultsCount" aria-live="polite">
+              Showing all bookings
+            </div>
           </section>
 
-          <!-- TABLE -->
+          <!-- =================================================
+               BOOKING TABLE
+          ================================================== -->
 
           <section class="table-container">
             <table id="bookingTable">
@@ -634,22 +403,41 @@
               <tbody>
                 {% if bookings %} {% for booking in bookings %}
 
-                <tr>
+                <tr
+                  data-status="{{ booking.status|lower }}"
+                  data-payment="{{ booking.payment_status|lower }}"
+                >
+                  <!-- ID -->
+
                   <td>
                     <strong> #{{ booking.id }} </strong>
                   </td>
 
+                  <!-- STUDENT -->
+
                   <td>{{ booking.name }}</td>
+
+                  <!-- EMAIL -->
 
                   <td>{{ booking.email }}</td>
 
+                  <!-- PHONE -->
+
                   <td>{{ booking.phone }}</td>
+
+                  <!-- DATE -->
 
                   <td>{{ booking.lesson_date }}</td>
 
+                  <!-- TIME -->
+
                   <td>{{ booking.lesson_time }}</td>
 
+                  <!-- LESSON -->
+
                   <td>{{ booking.lesson_type }}</td>
+
+                  <!-- PACKAGE -->
 
                   <td>{{ booking.package }}</td>
 
@@ -660,7 +448,6 @@
 
                     <span class="badge paid">
                       <i class="fas fa-check"></i>
-
                       Paid
                     </span>
 
@@ -668,7 +455,6 @@
 
                     <span class="badge pending">
                       <i class="fas fa-clock"></i>
-
                       Pending
                     </span>
 
@@ -682,7 +468,6 @@
 
                     <span class="badge confirmed">
                       <i class="fas fa-check-circle"></i>
-
                       Confirmed
                     </span>
 
@@ -690,7 +475,6 @@
 
                     <span class="badge cancelled">
                       <i class="fas fa-times-circle"></i>
-
                       Cancelled
                     </span>
 
@@ -698,7 +482,6 @@
 
                     <span class="badge waiting">
                       <i class="fas fa-hourglass-half"></i>
-
                       Pending
                     </span>
 
@@ -770,20 +553,19 @@
           </section>
         </section>
 
-        <!-- =====================================================
-             STUDENTS
-        ====================================================== -->
+        <!-- ==================================================
+             STUDENTS SECTION
+        =================================================== -->
 
         <section id="students" class="dashboard-section">
           <div class="section-header">
             <div>
               <h2>
                 <i class="fas fa-users"></i>
-
                 Students
               </h2>
 
-              <p>Student information from lesson bookings.</p>
+              <p>Student information from your lesson bookings.</p>
             </div>
           </div>
 
@@ -796,16 +578,15 @@
           </div>
         </section>
 
-        <!-- =====================================================
-             PAYMENTS
-        ====================================================== -->
+        <!-- ==================================================
+             PAYMENTS SECTION
+        =================================================== -->
 
         <section id="payments" class="dashboard-section">
           <div class="section-header">
             <div>
               <h2>
                 <i class="fas fa-credit-card"></i>
-
                 Payments
               </h2>
 
@@ -832,93 +613,580 @@
           </div>
         </section>
 
-        <!-- =====================================================
+        <!-- ==================================================
              FOOTER
-        ====================================================== -->
+        =================================================== -->
 
         <footer class="dashboard-footer">
-          <p>
-            © {{ current_year or 2026 }} Millrod Swim Academy. All rights
-            reserved.
-          </p>
+          <div>
+            <strong>
+              <i class="fas fa-water"></i>
+              Millrod Swim Academy
+            </strong>
 
-          <p>
-            <i class="fas fa-shield-halved"></i>
+            <p>Professional lesson and booking management.</p>
+          </div>
 
-            Secure Administrator Dashboard
-          </p>
+          <div class="footer-security">
+            <span>
+              <i class="fas fa-shield-halved"></i>
+              Secure admin session
+            </span>
+
+            <a href="/admin/logout"> Sign out </a>
+          </div>
         </footer>
       </main>
     </div>
 
-    <!-- ============================================================
-     TIMER SCRIPT
-============================================================= -->
+    <!-- ======================================================
+         ADMIN JAVASCRIPT
+    ======================================================= -->
+
+    <!-- ======================================================
+         ADMIN UI ENHANCEMENTS
+         Existing admin.js remains loaded below.
+    ======================================================= -->
+
+    <style>
+      :root {
+        --admin-blue: #087fc1;
+        --admin-deep: #063b73;
+        --admin-text: #17324d;
+        --admin-muted: #71869a;
+        --admin-border: rgba(8, 127, 193, 0.14);
+        --admin-surface: #ffffff;
+        --admin-soft: #f4fbff;
+        --admin-shadow: 0 18px 50px rgba(6, 59, 115, 0.09);
+      }
+
+      .admin-control-center {
+        margin: 0 0 30px;
+        padding: 28px;
+        border: 1px solid var(--admin-border);
+        border-radius: 24px;
+        background:
+          radial-gradient(
+            circle at top right,
+            rgba(8, 127, 193, 0.12),
+            transparent 35%
+          ),
+          linear-gradient(135deg, #ffffff, #f5fbff);
+        box-shadow: var(--admin-shadow);
+      }
+
+      .control-center-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        gap: 24px;
+        margin-bottom: 24px;
+      }
+
+      .eyebrow {
+        display: inline-flex;
+        align-items: center;
+        gap: 7px;
+        margin-bottom: 8px;
+        color: var(--admin-blue);
+        font-size: 12px;
+        font-weight: 800;
+        text-transform: uppercase;
+        letter-spacing: 0.12em;
+      }
+
+      .control-center-header h2 {
+        margin: 0;
+        color: var(--admin-deep);
+        font-size: clamp(24px, 3vw, 34px);
+      }
+
+      .control-center-header p {
+        max-width: 700px;
+        margin: 8px 0 0;
+        color: var(--admin-muted);
+        line-height: 1.6;
+      }
+
+      .control-center-actions {
+        display: flex;
+        gap: 10px;
+        flex-wrap: wrap;
+        justify-content: flex-end;
+      }
+
+      .quick-action {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        min-height: 42px;
+        padding: 0 15px;
+        border: 1px solid var(--admin-border);
+        border-radius: 12px;
+        background: #fff;
+        color: var(--admin-deep);
+        text-decoration: none;
+        font-weight: 750;
+        cursor: pointer;
+        transition:
+          transform 0.2s ease,
+          box-shadow 0.2s ease,
+          background 0.2s ease;
+      }
+
+      .quick-action:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 10px 24px rgba(6, 59, 115, 0.1);
+      }
+
+      .quick-action.primary {
+        border-color: var(--admin-blue);
+        background: var(--admin-blue);
+        color: #fff;
+      }
+
+      .admin-insight-grid {
+        display: grid;
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        gap: 14px;
+      }
+
+      .insight-card {
+        display: flex;
+        align-items: center;
+        gap: 14px;
+        min-width: 0;
+        padding: 18px;
+        border: 1px solid rgba(8, 127, 193, 0.1);
+        border-radius: 18px;
+        background: rgba(255, 255, 255, 0.84);
+      }
+
+      .insight-icon {
+        display: grid;
+        place-items: center;
+        width: 46px;
+        height: 46px;
+        flex: 0 0 46px;
+        border-radius: 14px;
+        font-size: 18px;
+      }
+
+      .insight-icon.blue {
+        background: #e8f6fd;
+        color: #087fc1;
+      }
+
+      .insight-icon.amber {
+        background: #fff4d9;
+        color: #a96500;
+      }
+
+      .insight-icon.green {
+        background: #e9f9ef;
+        color: #14834b;
+      }
+
+      .insight-icon.purple {
+        background: #f1ecff;
+        color: #6a45bd;
+      }
+
+      .insight-card strong {
+        display: block;
+        margin: 2px 0;
+        color: var(--admin-deep);
+        font-size: 25px;
+      }
+
+      .insight-label {
+        display: block;
+        color: var(--admin-muted);
+        font-size: 11px;
+        font-weight: 800;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+      }
+
+      .insight-card small {
+        color: var(--admin-muted);
+      }
+
+      .admin-health-row {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 12px;
+        margin-top: 14px;
+      }
+
+      .health-item {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 12px 14px;
+        border: 1px solid rgba(8, 127, 193, 0.09);
+        border-radius: 14px;
+        background: rgba(255, 255, 255, 0.72);
+      }
+
+      .health-dot {
+        width: 9px;
+        height: 9px;
+        flex: 0 0 9px;
+        border-radius: 50%;
+        background: #16a05d;
+        box-shadow: 0 0 0 5px rgba(22, 160, 93, 0.1);
+      }
+
+      .health-item strong,
+      .health-item small {
+        display: block;
+      }
+
+      .health-item strong {
+        color: var(--admin-deep);
+        font-size: 13px;
+      }
+
+      .health-item small {
+        margin-top: 2px;
+        color: var(--admin-muted);
+        font-size: 11px;
+      }
+
+      .booking-toolbar {
+        display: grid;
+        grid-template-columns: minmax(260px, 1fr) auto auto;
+        align-items: center;
+        gap: 12px;
+        margin: 18px 0;
+        padding: 14px;
+        border: 1px solid var(--admin-border);
+        border-radius: 18px;
+        background: #fff;
+        box-shadow: 0 10px 30px rgba(6, 59, 115, 0.06);
+      }
+
+      .search-box {
+        position: relative;
+        min-width: 0;
+      }
+
+      .search-box > i {
+        position: absolute;
+        left: 15px;
+        top: 50%;
+        transform: translateY(-50%);
+        color: var(--admin-muted);
+        pointer-events: none;
+      }
+
+      .search-box input {
+        width: 100%;
+        min-height: 44px;
+        padding: 0 42px;
+        border: 1px solid #d9e8f0;
+        border-radius: 12px;
+        outline: none;
+        box-sizing: border-box;
+        color: var(--admin-text);
+        background: #fbfdfe;
+      }
+
+      .search-box input:focus {
+        border-color: var(--admin-blue);
+        box-shadow: 0 0 0 4px rgba(8, 127, 193, 0.1);
+      }
+
+      .clear-search {
+        position: absolute;
+        right: 7px;
+        top: 7px;
+        width: 30px;
+        height: 30px;
+        border: 0;
+        border-radius: 8px;
+        background: transparent;
+        color: var(--admin-muted);
+        cursor: pointer;
+      }
+
+      .booking-filters {
+        display: flex;
+        gap: 8px;
+        flex-wrap: wrap;
+      }
+
+      .booking-filters select,
+      .filter-reset {
+        min-height: 42px;
+        border: 1px solid #d9e8f0;
+        border-radius: 11px;
+        background: #fff;
+        color: var(--admin-text);
+        padding: 0 12px;
+        font-weight: 650;
+      }
+
+      .filter-reset {
+        cursor: pointer;
+      }
+
+      .filter-reset:hover {
+        background: var(--admin-soft);
+      }
+
+      .results-count {
+        color: var(--admin-muted);
+        font-size: 12px;
+        font-weight: 700;
+        white-space: nowrap;
+      }
+
+      .booking-row-hidden {
+        display: none !important;
+      }
+
+      .dashboard-footer {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 20px;
+        margin-top: 30px;
+        padding: 22px 0 8px;
+        border-top: 1px solid rgba(8, 127, 193, 0.1);
+      }
+
+      .dashboard-footer strong {
+        color: var(--admin-deep);
+      }
+
+      .dashboard-footer p {
+        margin: 5px 0 0;
+        color: var(--admin-muted);
+        font-size: 12px;
+      }
+
+      .footer-security {
+        display: flex;
+        align-items: center;
+        gap: 16px;
+        color: var(--admin-muted);
+        font-size: 12px;
+        font-weight: 700;
+      }
+
+      .footer-security span {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+      }
+
+      .footer-security span i {
+        color: #16a05d;
+      }
+
+      .footer-security a {
+        color: var(--admin-blue);
+        text-decoration: none;
+      }
+
+      @media (max-width: 1100px) {
+        .admin-insight-grid {
+          grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+
+        .booking-toolbar {
+          grid-template-columns: 1fr;
+        }
+
+        .results-count {
+          white-space: normal;
+        }
+      }
+
+      @media (max-width: 760px) {
+        .admin-control-center {
+          padding: 20px;
+          border-radius: 20px;
+        }
+
+        .control-center-header {
+          flex-direction: column;
+        }
+
+        .control-center-actions {
+          width: 100%;
+          justify-content: flex-start;
+        }
+
+        .admin-insight-grid,
+        .admin-health-row {
+          grid-template-columns: 1fr;
+        }
+
+        .booking-filters {
+          display: grid;
+          grid-template-columns: 1fr 1fr;
+        }
+
+        .booking-filters select,
+        .filter-reset {
+          width: 100%;
+        }
+
+        .dashboard-footer {
+          align-items: flex-start;
+          flex-direction: column;
+        }
+      }
+
+      @media (max-width: 480px) {
+        .booking-filters {
+          grid-template-columns: 1fr;
+        }
+
+        .quick-action {
+          width: 100%;
+        }
+      }
+    </style>
 
     <script>
       (function () {
         "use strict";
 
-        const SESSION_SECONDS = 5 * 60;
+        const searchInput = document.getElementById("searchInput");
 
-        const countdown = document.getElementById("sessionCountdown");
+        const statusFilter = document.getElementById("statusFilter");
 
-        const timer = document.getElementById("adminSessionTimer");
+        const paymentFilter = document.getElementById("paymentFilter");
 
-        if (!countdown || !timer) {
-          console.error("Admin security timer could not be initialized.");
+        const clearSearchBtn = document.getElementById("clearSearchBtn");
 
-          return;
-        }
+        const resetFiltersBtn = document.getElementById("resetFiltersBtn");
 
-        let remaining = SESSION_SECONDS;
+        const resultsCount = document.getElementById("resultsCount");
 
-        function formatTime(seconds) {
-          const minutes = Math.floor(seconds / 60);
+        const refreshButton = document.getElementById("refreshDashboardBtn");
 
-          const secs = seconds % 60;
+        const rows = Array.from(
+          document.querySelectorAll("#bookingTable tbody tr[data-status]"),
+        );
 
-          return (
-            String(minutes).padStart(2, "0") +
-            ":" +
-            String(secs).padStart(2, "0")
-          );
-        }
+        function filterBookings() {
+          const query = (searchInput?.value || "").trim().toLowerCase();
 
-        function updateTimer() {
-          countdown.textContent = formatTime(Math.max(0, remaining));
+          const selectedStatus = statusFilter?.value || "all";
 
-          timer.classList.remove("warning", "critical");
+          const selectedPayment = paymentFilter?.value || "all";
 
-          if (remaining <= 30) {
-            timer.classList.add("critical");
-          } else if (remaining <= 60) {
-            timer.classList.add("warning");
+          let visible = 0;
+
+          rows.forEach(function (row) {
+            const text = row.textContent.toLowerCase();
+
+            const status = row.dataset.status || "";
+
+            const payment = row.dataset.payment || "";
+
+            const matchesSearch = !query || text.includes(query);
+
+            const matchesStatus =
+              selectedStatus === "all" || status === selectedStatus;
+
+            const matchesPayment =
+              selectedPayment === "all" || payment === selectedPayment;
+
+            const show = matchesSearch && matchesStatus && matchesPayment;
+
+            row.classList.toggle("booking-row-hidden", !show);
+
+            if (show) {
+              visible += 1;
+            }
+          });
+
+          if (resultsCount) {
+            resultsCount.textContent = `Showing ${visible} of ${rows.length} bookings`;
           }
         }
 
-        updateTimer();
+        searchInput?.addEventListener("input", filterBookings);
 
-        window.setInterval(function () {
-          remaining -= 1;
+        statusFilter?.addEventListener("change", filterBookings);
 
-          if (remaining <= 0) {
-            countdown.textContent = "00:00";
+        paymentFilter?.addEventListener("change", filterBookings);
 
-            window.location.href = "/admin/logout";
-
-            return;
+        clearSearchBtn?.addEventListener("click", function () {
+          if (searchInput) {
+            searchInput.value = "";
+            searchInput.focus();
           }
 
-          updateTimer();
-        }, 1000);
+          filterBookings();
+        });
+
+        resetFiltersBtn?.addEventListener("click", function () {
+          if (searchInput) {
+            searchInput.value = "";
+          }
+
+          if (statusFilter) {
+            statusFilter.value = "all";
+          }
+
+          if (paymentFilter) {
+            paymentFilter.value = "all";
+          }
+
+          filterBookings();
+        });
+
+        refreshButton?.addEventListener("click", function () {
+          refreshButton.disabled = true;
+
+          const icon = refreshButton.querySelector("i");
+
+          icon?.classList.add("fa-spin");
+
+          window.location.reload();
+        });
+
+        filterBookings();
       })();
     </script>
 
-    <!-- ============================================================
-     ADMIN JAVASCRIPT
-============================================================= -->
+    <style>
+      /* ======================================================
+         APPROVAL BUTTON SAFETY / FEEDBACK
+      ======================================================= */
+      .confirm-btn,
+      .cancel-btn,
+      .view-btn {
+        position: relative;
+        z-index: 2;
+        pointer-events: auto !important;
+      }
 
-    <script src="{{ url_for('static', filename='admin.js') }}" defer></script>
+      .confirm-btn:not(:disabled) {
+        cursor: pointer !important;
+      }
+
+      .confirm-btn:disabled {
+        cursor: wait !important;
+        opacity: 0.72;
+      }
+
+      .confirm-btn .fa-spinner {
+        margin-right: 6px;
+      }
+    </style>
+
+    <script
+      src="{{ url_for('static', filename='admin.js') }}?v=20260818-approval-email-fix-3"
+      defer
+    ></script>
   </body>
 </html>
