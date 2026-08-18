@@ -3,317 +3,595 @@
   <head>
     <meta charset="UTF-8" />
 
-    <meta
-      name="viewport"
-      content="width=device-width, initial-scale=1.0"
-    />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
     <meta
       name="description"
-      content="Millrod Swim Academy professional admin dashboard"
+      content="Millrod Swim Academy professional administrator dashboard"
     />
 
     <title>Millrod Swim Academy | Admin Dashboard</title>
 
-    <!-- ======================================================
+    <!-- =========================================================
          ADMIN CSS
-    ======================================================= -->
+    ========================================================== -->
 
     <link
       rel="stylesheet"
       href="{{ url_for('static', filename='admin.css') }}"
     />
 
-    <!-- ======================================================
+    <!-- =========================================================
          FONT AWESOME
-    ======================================================= -->
+    ========================================================== -->
 
     <link
       rel="stylesheet"
       href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css"
     />
+
+    <!-- =========================================================
+         ADMIN PAGE OVERRIDES
+         NO HAMBURGER / NO MOBILE NAV
+    ========================================================== -->
+
+    <style>
+      /*
+         * IMPORTANT
+         * This admin dashboard ALWAYS uses the desktop sidebar.
+         *
+         * There is intentionally NO hamburger button in this file.
+         */
+
+      html,
+      body {
+        margin: 0;
+
+        min-height: 100%;
+      }
+
+      body {
+        overflow-x: auto;
+      }
+
+      /* =====================================================
+           DESKTOP DASHBOARD
+        ====================================================== */
+
+      .dashboard {
+        display: grid !important;
+
+        grid-template-columns:
+          260px
+          minmax(900px, 1fr) !important;
+
+        min-width: 1160px;
+
+        min-height: 100vh;
+      }
+
+      /* =====================================================
+           SIDEBAR
+        ====================================================== */
+
+      .sidebar {
+        display: flex !important;
+
+        visibility: visible !important;
+
+        width: 260px !important;
+
+        min-width: 260px !important;
+
+        height: 100vh;
+
+        position: sticky;
+
+        top: 0;
+
+        transform: none !important;
+      }
+
+      .sidebar nav {
+        display: flex !important;
+
+        visibility: visible !important;
+
+        flex-direction: column !important;
+      }
+
+      .sidebar nav a {
+        display: flex !important;
+
+        visibility: visible !important;
+      }
+
+      .sidebar nav a span {
+        display: inline !important;
+      }
+
+      /* =====================================================
+           TOP BAR
+        ====================================================== */
+
+      .topbar {
+        display: flex !important;
+
+        flex-direction: row !important;
+
+        align-items: center !important;
+
+        justify-content: space-between !important;
+
+        gap: 20px;
+      }
+
+      .topbar-actions {
+        display: flex !important;
+
+        align-items: center !important;
+
+        justify-content: flex-end !important;
+
+        flex-wrap: nowrap !important;
+
+        gap: 10px;
+      }
+
+      /* =====================================================
+           SECURITY TIMER
+        ====================================================== */
+
+      .session-timer {
+        display: inline-flex !important;
+
+        align-items: center;
+
+        gap: 10px;
+
+        min-width: 155px;
+
+        padding: 9px 14px;
+
+        border: 1px solid rgba(8, 127, 193, 0.18);
+
+        border-radius: 14px;
+
+        background: linear-gradient(135deg, #f4fbff, #ffffff);
+
+        box-shadow: 0 8px 24px rgba(6, 59, 115, 0.1);
+      }
+
+      .session-timer-icon {
+        width: 35px;
+
+        height: 35px;
+
+        min-width: 35px;
+
+        display: grid;
+
+        place-items: center;
+
+        border-radius: 10px;
+
+        background: #e7f6fd;
+
+        color: #087fc1;
+      }
+
+      .session-timer-content {
+        display: flex;
+
+        flex-direction: column;
+      }
+
+      .session-timer-label {
+        font-size: 10px;
+
+        font-weight: 800;
+
+        text-transform: uppercase;
+
+        letter-spacing: 0.08em;
+
+        color: #71869a;
+      }
+
+      #sessionCountdown {
+        margin-top: 4px;
+
+        color: #063b73;
+
+        font-size: 18px;
+
+        font-weight: 900;
+
+        letter-spacing: 0.05em;
+
+        font-variant-numeric: tabular-nums;
+      }
+
+      /* =====================================================
+           TIMER WARNING
+        ====================================================== */
+
+      .session-timer.warning {
+        background: #fffaf0;
+
+        border-color: rgba(220, 145, 0, 0.45);
+      }
+
+      .session-timer.warning #sessionCountdown {
+        color: #9a5b00;
+      }
+
+      /* =====================================================
+           TIMER CRITICAL
+        ====================================================== */
+
+      .session-timer.critical {
+        background: #fff5f5;
+
+        border-color: rgba(190, 45, 45, 0.5);
+
+        animation: adminTimerPulse 1s ease-in-out infinite;
+      }
+
+      .session-timer.critical #sessionCountdown {
+        color: #b42323;
+      }
+
+      @keyframes adminTimerPulse {
+        50% {
+          transform: scale(1.025);
+        }
+      }
+
+      /* =====================================================
+           CONTENT
+        ====================================================== */
+
+      .content {
+        min-width: 900px;
+
+        width: 100%;
+      }
+
+      /* =====================================================
+           TABLE
+        ====================================================== */
+
+      .table-container {
+        width: 100%;
+
+        overflow-x: auto;
+      }
+
+      table {
+        min-width: 1050px;
+      }
+
+      /* =====================================================
+           REMOVE ANY POSSIBLE MOBILE CONTROLS
+        ====================================================== */
+
+      .menu-toggle,
+      .mobile-menu-toggle,
+      .sidebar-toggle,
+      .mobile-nav-toggle,
+      .hamburger,
+      .nav-toggle,
+      .mobile-menu,
+      .mobile-header,
+      .mobile-navbar,
+      .mobile-navigation {
+        display: none !important;
+
+        visibility: hidden !important;
+      }
+    </style>
   </head>
 
   <body>
+    <!-- ============================================================
+     ADMIN DASHBOARD
+============================================================= -->
 
-    <!-- ======================================================
-         DASHBOARD
-    ======================================================= -->
+    <div class="dashboard" id="dashboard">
+      <!-- ========================================================
+         SIDEBAR
+    ========================================================= -->
 
-    <div class="dashboard">
-
-      <!-- ====================================================
-           SIDEBAR
-      ===================================================== -->
-
-      <aside class="sidebar">
+      <aside class="sidebar" id="adminSidebar">
+        <!-- BRAND -->
 
         <div class="logo">
-
-          <i class="fas fa-water"></i>
+          <div class="logo-icon">
+            <i class="fas fa-water"></i>
+          </div>
 
           <div>
             <h2>Millrod Swim</h2>
 
             <p>Academy Admin</p>
           </div>
-
         </div>
 
-
-        <!-- ==================================================
+        <!-- =====================================================
              NAVIGATION
-        =================================================== -->
+        ====================================================== -->
 
-        <nav aria-label="Admin navigation">
-
-          <a
-            href="#dashboard"
-            class="active"
-          >
+        <nav aria-label="Administrator navigation">
+          <a href="#dashboard" class="active">
             <i class="fas fa-chart-line"></i>
 
-            <span>Dashboard</span>
+            <span> Dashboard </span>
           </a>
-
 
           <a href="#bookings">
-
             <i class="fas fa-calendar-check"></i>
 
-            <span>Bookings</span>
-
+            <span> Bookings </span>
           </a>
-
 
           <a href="#students">
-
             <i class="fas fa-users"></i>
 
-            <span>Students</span>
-
+            <span> Students </span>
           </a>
-
 
           <a href="#payments">
-
             <i class="fas fa-credit-card"></i>
 
-            <span>Payments</span>
-
+            <span> Payments </span>
           </a>
 
+          <a href="/" title="Return to main website">
+            <i class="fas fa-globe"></i>
 
-          <a href="/admin/logout">
-
-            <i class="fas fa-sign-out-alt"></i>
-
-            <span>Logout</span>
-
+            <span> Website </span>
           </a>
 
+          <a href="/admin/logout" title="Logout">
+            <i class="fas fa-right-from-bracket"></i>
+
+            <span> Logout </span>
+          </a>
         </nav>
 
+        <!-- =====================================================
+             SECURITY AREA
+        ====================================================== -->
+
+        <div
+          class="sidebar-security"
+          style="
+            margin-top: auto;
+            padding: 18px;
+            border-radius: 16px;
+            background: rgba(255, 255, 255, 0.08);
+            color: white;
+          "
+        >
+          <div
+            style="
+              display: flex;
+              align-items: center;
+              gap: 10px;
+              margin-bottom: 8px;
+            "
+          >
+            <i class="fas fa-shield-halved" style="color: #69d5ff"></i>
+
+            <strong> Secure Admin </strong>
+          </div>
+
+          <small style="opacity: 0.75; line-height: 1.5">
+            Administrator access is protected with email verification and
+            automatic session security.
+          </small>
+        </div>
       </aside>
 
+      <!-- ========================================================
+         MAIN CONTENT
+    ========================================================= -->
 
-      <!-- ====================================================
-           MAIN CONTENT
-      ===================================================== -->
-
-      <main
-        class="content"
-        id="dashboard"
-      >
-
-
-        <!-- ==================================================
+      <main class="content">
+        <!-- =====================================================
              TOP BAR
-        =================================================== -->
+        ====================================================== -->
 
         <header class="topbar">
-
           <div>
-
-            <h1>
-              Admin Dashboard
-            </h1>
-
-            <p>
-              Manage your swimming lessons,
-              bookings, and payments.
-            </p>
-
-          </div>
-
-
-          <div class="topbar-actions">
-
-
-            <!-- WEBSITE -->
-
-            <a
-              href="/"
-              class="home-btn"
-              title="Open Millrod Swim Academy website"
+            <div
+              style="
+                color: #087fc1;
+                font-size: 11px;
+                font-weight: 900;
+                text-transform: uppercase;
+                letter-spacing: 0.1em;
+                margin-bottom: 5px;
+              "
             >
-
-              <i class="fas fa-home"></i>
-
-              <span>Website</span>
-
-            </a>
-
-
-            <!-- LOGOUT -->
-
-            <a
-              href="/admin/logout"
-              class="logout-btn"
-              title="Logout"
-            >
-
-              <i class="fas fa-sign-out-alt"></i>
-
-              <span>Logout</span>
-
-            </a>
-
-
-            <!-- ADMIN -->
-
-            <div class="admin-user">
-
-              <i class="fas fa-user-circle"></i>
-
-              <span>
-                Administrator
-              </span>
-
+              Millrod Swim Academy
             </div>
 
+            <h1>Admin Dashboard</h1>
+
+            <p>
+              Manage your swimming lessons, bookings, students and payments.
+            </p>
           </div>
 
+          <!-- =================================================
+                 TOP RIGHT
+            ================================================== -->
+
+          <div class="topbar-actions">
+            <!-- =============================================
+                     5-MINUTE SECURITY TIMER
+                ============================================== -->
+
+            <div
+              class="session-timer"
+              id="adminSessionTimer"
+              title="Automatic logout after 5 minutes of inactivity"
+              aria-live="polite"
+            >
+              <div class="session-timer-icon">
+                <i class="fas fa-shield-halved"></i>
+              </div>
+
+              <div class="session-timer-content">
+                <span class="session-timer-label"> Secure session </span>
+
+                <strong id="sessionCountdown"> 05:00 </strong>
+              </div>
+            </div>
+
+            <!-- =============================================
+                     MAIN WEBSITE
+                ============================================== -->
+
+            <a href="/" class="home-btn" title="Open main website">
+              <i class="fas fa-home"></i>
+
+              <span> Website </span>
+            </a>
+
+            <!-- =============================================
+                     LOGOUT
+                ============================================== -->
+
+            <a href="/admin/logout" class="logout-btn" title="Logout">
+              <i class="fas fa-right-from-bracket"></i>
+
+              <span> Logout </span>
+            </a>
+
+            <!-- =============================================
+                     ADMIN
+                ============================================== -->
+
+            <div class="admin-user">
+              <i class="fas fa-user-circle"></i>
+
+              <span> Administrator </span>
+            </div>
+          </div>
         </header>
 
-
-        <!-- ==================================================
-             STATISTICS
-        =================================================== -->
+        <!-- =====================================================
+             SECURITY NOTICE
+        ====================================================== -->
 
         <section
-          class="stats"
-          aria-label="Dashboard statistics"
+          style="
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            margin-bottom: 24px;
+            padding: 16px 20px;
+            border: 1px solid #d9eef8;
+            border-radius: 16px;
+            background: linear-gradient(135deg, #effaff, #ffffff);
+          "
         >
+          <div
+            style="
+              width: 42px;
+              height: 42px;
+              min-width: 42px;
+              display: grid;
+              place-items: center;
+              border-radius: 12px;
+              background: #dff5ff;
+              color: #087fc1;
+            "
+          >
+            <i class="fas fa-lock"></i>
+          </div>
 
+          <div>
+            <strong style="display: block; color: #063b73">
+              Secure Administrator Session
+            </strong>
 
-          <!-- TODAY'S LESSONS -->
+            <span style="color: #71869a; font-size: 13px">
+              Your session is automatically protected. The countdown above shows
+              your current security session.
+            </span>
+          </div>
+        </section>
+
+        <!-- =====================================================
+             STATISTICS
+        ====================================================== -->
+
+        <section class="stats" aria-label="Dashboard statistics">
+          <!-- TODAY -->
 
           <div class="card">
-
             <i class="fas fa-calendar-day"></i>
 
-            <h3>
-              {{ today_lessons }}
-            </h3>
+            <h3>{{ today_lessons }}</h3>
 
-            <p>
-              Today's Lessons
-            </p>
-
+            <p>Today's Lessons</p>
           </div>
 
-
-          <!-- PENDING PAYMENTS -->
+          <!-- PENDING -->
 
           <div class="card">
-
             <i class="fas fa-hourglass-half"></i>
 
-            <h3>
-              {{ pending_payments }}
-            </h3>
+            <h3>{{ pending_payments }}</h3>
 
-            <p>
-              Pending Payments
-            </p>
-
+            <p>Pending Payments</p>
           </div>
 
-
-          <!-- CONFIRMED LESSONS -->
+          <!-- CONFIRMED -->
 
           <div class="card">
+            <i class="fas fa-circle-check"></i>
 
-            <i class="fas fa-check-circle"></i>
+            <h3>{{ confirmed_lessons }}</h3>
 
-            <h3>
-              {{ confirmed_lessons }}
-            </h3>
-
-            <p>
-              Confirmed Lessons
-            </p>
-
+            <p>Confirmed Lessons</p>
           </div>
-
 
           <!-- REVENUE -->
 
           <div class="card">
-
             <i class="fas fa-dollar-sign"></i>
 
-            <h3>
-              ${{ revenue }}
-            </h3>
+            <h3>${{ revenue }}</h3>
 
-            <p>
-              Revenue
-            </p>
-
+            <p>Revenue</p>
           </div>
-
         </section>
 
+        <!-- =====================================================
+             BOOKINGS
+        ====================================================== -->
 
-        <!-- ==================================================
-             BOOKINGS SECTION
-        =================================================== -->
-
-        <section
-          id="bookings"
-          aria-labelledby="bookings-title"
-        >
-
-
-          <!-- SECTION HEADER -->
-
-          <div
-            class="section-header"
-          >
-
+        <section id="bookings" class="dashboard-section">
+          <div class="section-header">
             <div>
+              <h2>
+                <i class="fas fa-calendar-check"></i>
 
-              <h2 id="bookings-title">
                 Bookings
               </h2>
 
-              <p>
-                Review and manage swimming lesson requests.
-              </p>
-
+              <p>Review and manage swimming lesson requests.</p>
             </div>
-
           </div>
 
-
-          <!-- =================================================
-               SEARCH
-          ================================================== -->
+          <!-- SEARCH -->
 
           <section class="search-bar">
-
             <input
               type="search"
               id="searchInput"
@@ -321,22 +599,14 @@
               autocomplete="off"
               aria-label="Search bookings"
             />
-
           </section>
 
-
-          <!-- =================================================
-               BOOKING TABLE
-          ================================================== -->
+          <!-- TABLE -->
 
           <section class="table-container">
-
             <table id="bookingTable">
-
               <thead>
-
                 <tr>
-
                   <th>ID</th>
 
                   <th>Student</th>
@@ -358,364 +628,297 @@
                   <th>Status</th>
 
                   <th>Actions</th>
-
                 </tr>
-
               </thead>
 
-
               <tbody>
+                {% if bookings %} {% for booking in bookings %}
 
-                {% if bookings %}
+                <tr>
+                  <td>
+                    <strong> #{{ booking.id }} </strong>
+                  </td>
 
-                  {% for booking in bookings %}
+                  <td>{{ booking.name }}</td>
 
-                    <tr>
+                  <td>{{ booking.email }}</td>
 
-                      <!-- ID -->
+                  <td>{{ booking.phone }}</td>
 
-                      <td>
-                        <strong>
-                          #{{ booking.id }}
-                        </strong>
-                      </td>
+                  <td>{{ booking.lesson_date }}</td>
 
+                  <td>{{ booking.lesson_time }}</td>
 
-                      <!-- STUDENT -->
+                  <td>{{ booking.lesson_type }}</td>
 
-                      <td>
-                        {{ booking.name }}
-                      </td>
+                  <td>{{ booking.package }}</td>
 
+                  <!-- PAYMENT -->
 
-                      <!-- EMAIL -->
+                  <td>
+                    {% if booking.payment_status == "paid" %}
 
-                      <td>
-                        {{ booking.email }}
-                      </td>
+                    <span class="badge paid">
+                      <i class="fas fa-check"></i>
 
+                      Paid
+                    </span>
 
-                      <!-- PHONE -->
+                    {% else %}
 
-                      <td>
-                        {{ booking.phone }}
-                      </td>
+                    <span class="badge pending">
+                      <i class="fas fa-clock"></i>
 
+                      Pending
+                    </span>
 
-                      <!-- DATE -->
+                    {% endif %}
+                  </td>
 
-                      <td>
-                        {{ booking.lesson_date }}
-                      </td>
+                  <!-- STATUS -->
 
+                  <td>
+                    {% if booking.status == "confirmed" %}
 
-                      <!-- TIME -->
+                    <span class="badge confirmed">
+                      <i class="fas fa-check-circle"></i>
 
-                      <td>
-                        {{ booking.lesson_time }}
-                      </td>
+                      Confirmed
+                    </span>
 
+                    {% elif booking.status == "cancelled" %}
 
-                      <!-- LESSON -->
+                    <span class="badge cancelled">
+                      <i class="fas fa-times-circle"></i>
 
-                      <td>
-                        {{ booking.lesson_type }}
-                      </td>
+                      Cancelled
+                    </span>
 
+                    {% else %}
 
-                      <!-- PACKAGE -->
+                    <span class="badge waiting">
+                      <i class="fas fa-hourglass-half"></i>
 
-                      <td>
-                        {{ booking.package }}
-                      </td>
+                      Pending
+                    </span>
 
+                    {% endif %}
+                  </td>
 
-                      <!-- PAYMENT -->
+                  <!-- ACTIONS -->
 
-                      <td>
+                  <td>
+                    <button
+                      type="button"
+                      class="view-btn"
+                      data-id="{{ booking.id }}"
+                      title="View booking"
+                    >
+                      <i class="fas fa-eye"></i>
 
-                        {% if booking.payment_status == "paid" %}
+                      View
+                    </button>
 
-                          <span
-                            class="badge paid"
-                          >
-                            <i class="fas fa-check"></i>
-                            Paid
-                          </span>
+                    {% if booking.status != "confirmed" %}
 
-                        {% else %}
+                    <button
+                      type="button"
+                      class="confirm-btn"
+                      data-id="{{ booking.id }}"
+                      title="Confirm booking"
+                    >
+                      <i class="fas fa-check"></i>
 
-                          <span
-                            class="badge pending"
-                          >
-                            <i class="fas fa-clock"></i>
-                            Pending
-                          </span>
+                      Confirm
+                    </button>
 
-                        {% endif %}
-
-                      </td>
-
-
-                      <!-- STATUS -->
-
-                      <td>
-
-                        {% if booking.status == "confirmed" %}
-
-                          <span
-                            class="badge confirmed"
-                          >
-                            <i class="fas fa-check-circle"></i>
-                            Confirmed
-                          </span>
-
-                        {% elif booking.status == "cancelled" %}
-
-                          <span
-                            class="badge cancelled"
-                          >
-                            <i class="fas fa-times-circle"></i>
-                            Cancelled
-                          </span>
-
-                        {% else %}
-
-                          <span
-                            class="badge waiting"
-                          >
-                            <i class="fas fa-hourglass-half"></i>
-                            Pending
-                          </span>
-
-                        {% endif %}
-
-                      </td>
-
-
-                      <!-- ACTIONS -->
-
-                      <td>
-
-                        <button
-                          type="button"
-                          class="view-btn"
-                          data-id="{{ booking.id }}"
-                          title="View booking"
-                        >
-
-                          <i class="fas fa-eye"></i>
-
-                          View
-
-                        </button>
-
-
-                        {% if booking.status != "confirmed" %}
-
-                          <button
-                            type="button"
-                            class="confirm-btn"
-                            data-id="{{ booking.id }}"
-                            title="Confirm booking"
-                          >
-
-                            <i class="fas fa-check"></i>
-
-                            Confirm
-
-                          </button>
-
-                        {% endif %}
-
-
-                        {% if booking.status != "cancelled" %}
-
-                          <button
-                            type="button"
-                            class="cancel-btn"
-                            data-id="{{ booking.id }}"
-                            title="Cancel booking"
-                          >
-
-                            <i class="fas fa-times"></i>
-
-                            Cancel
-
-                          </button>
-
-                        {% endif %}
-
-                      </td>
-
-                    </tr>
-
-                  {% endfor %}
-
-                {% else %}
-
-                  <tr class="empty-row">
-
-                    <td colspan="11">
-
-                      <i
-                        class="fas fa-calendar-xmark"
-                        style="font-size: 30px; margin-bottom: 10px;"
-                      ></i>
-
-                      <br />
-
-                      No bookings found.
-
-                    </td>
-
-                  </tr>
+                    {% endif %} {% if booking.status != "cancelled" %}
+
+                    <button
+                      type="button"
+                      class="cancel-btn"
+                      data-id="{{ booking.id }}"
+                      title="Cancel booking"
+                    >
+                      <i class="fas fa-times"></i>
+
+                      Cancel
+                    </button>
+
+                    {% endif %}
+                  </td>
+                </tr>
+
+                {% endfor %} {% else %}
+
+                <tr class="empty-row">
+                  <td colspan="11">
+                    <i
+                      class="fas fa-calendar-xmark"
+                      style="font-size: 30px; margin-bottom: 10px"
+                    ></i>
+
+                    <br />
+
+                    No bookings found.
+                  </td>
+                </tr>
 
                 {% endif %}
-
               </tbody>
-
             </table>
-
           </section>
-
         </section>
 
+        <!-- =====================================================
+             STUDENTS
+        ====================================================== -->
 
-        <!-- ==================================================
-             STUDENTS SECTION
-        =================================================== -->
-
-        <section
-          id="students"
-          class="dashboard-section"
-        >
-
+        <section id="students" class="dashboard-section">
           <div class="section-header">
-
             <div>
-
               <h2>
                 <i class="fas fa-users"></i>
+
                 Students
               </h2>
 
-              <p>
-                Student information from your lesson bookings.
-              </p>
-
+              <p>Student information from lesson bookings.</p>
             </div>
-
           </div>
-
 
           <div class="card">
-
             <i class="fas fa-user-graduate"></i>
 
-            <h3>
-              {{ bookings|length }}
-            </h3>
+            <h3>{{ bookings|length }}</h3>
 
-            <p>
-              Booking Records
-            </p>
-
+            <p>Booking Records</p>
           </div>
-
         </section>
 
+        <!-- =====================================================
+             PAYMENTS
+        ====================================================== -->
 
-        <!-- ==================================================
-             PAYMENTS SECTION
-        =================================================== -->
-
-        <section
-          id="payments"
-          class="dashboard-section"
-        >
-
+        <section id="payments" class="dashboard-section">
           <div class="section-header">
-
             <div>
-
               <h2>
                 <i class="fas fa-credit-card"></i>
+
                 Payments
               </h2>
 
-              <p>
-                Review payment activity and outstanding balances.
-              </p>
-
+              <p>Review payment activity and outstanding balances.</p>
             </div>
-
           </div>
-
 
           <div class="payment-summary">
-
             <div class="card">
-
               <i class="fas fa-dollar-sign"></i>
 
-              <h3>
-                ${{ revenue }}
-              </h3>
+              <h3>${{ revenue }}</h3>
 
-              <p>
-                Current Revenue
-              </p>
-
+              <p>Current Revenue</p>
             </div>
-
 
             <div class="card">
-
               <i class="fas fa-hourglass-half"></i>
 
-              <h3>
-                {{ pending_payments }}
-              </h3>
+              <h3>{{ pending_payments }}</h3>
 
-              <p>
-                Pending Payments
-              </p>
-
+              <p>Pending Payments</p>
             </div>
-
           </div>
-
         </section>
 
-
-        <!-- ==================================================
+        <!-- =====================================================
              FOOTER
-        =================================================== -->
+        ====================================================== -->
 
         <footer class="dashboard-footer">
-
           <p>
-            © {{ current_year or 2026 }}
-            Millrod Swim Academy.
-            All rights reserved.
+            © {{ current_year or 2026 }} Millrod Swim Academy. All rights
+            reserved.
           </p>
 
+          <p>
+            <i class="fas fa-shield-halved"></i>
+
+            Secure Administrator Dashboard
+          </p>
         </footer>
-
       </main>
-
     </div>
 
+    <!-- ============================================================
+     TIMER SCRIPT
+============================================================= -->
 
-    <!-- ======================================================
-         ADMIN JAVASCRIPT
-    ======================================================= -->
+    <script>
+      (function () {
+        "use strict";
 
-    <script
-      src="{{ url_for('static', filename='admin.js') }}"
-      defer
-    ></script>
+        const SESSION_SECONDS = 5 * 60;
 
+        const countdown = document.getElementById("sessionCountdown");
+
+        const timer = document.getElementById("adminSessionTimer");
+
+        if (!countdown || !timer) {
+          console.error("Admin security timer could not be initialized.");
+
+          return;
+        }
+
+        let remaining = SESSION_SECONDS;
+
+        function formatTime(seconds) {
+          const minutes = Math.floor(seconds / 60);
+
+          const secs = seconds % 60;
+
+          return (
+            String(minutes).padStart(2, "0") +
+            ":" +
+            String(secs).padStart(2, "0")
+          );
+        }
+
+        function updateTimer() {
+          countdown.textContent = formatTime(Math.max(0, remaining));
+
+          timer.classList.remove("warning", "critical");
+
+          if (remaining <= 30) {
+            timer.classList.add("critical");
+          } else if (remaining <= 60) {
+            timer.classList.add("warning");
+          }
+        }
+
+        updateTimer();
+
+        window.setInterval(function () {
+          remaining -= 1;
+
+          if (remaining <= 0) {
+            countdown.textContent = "00:00";
+
+            window.location.href = "/admin/logout";
+
+            return;
+          }
+
+          updateTimer();
+        }, 1000);
+      })();
+    </script>
+
+    <!-- ============================================================
+     ADMIN JAVASCRIPT
+============================================================= -->
+
+    <script src="{{ url_for('static', filename='admin.js') }}" defer></script>
   </body>
 </html>

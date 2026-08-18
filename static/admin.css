@@ -3,168 +3,149 @@
    PROFESSIONAL ADMIN DASHBOARD
    ============================================================ */
 
-
 /* ============================================================
-   GLOBAL RESET
+   GLOBAL
    ============================================================ */
 
 * {
-  margin: 0;
-  padding: 0;
   box-sizing: border-box;
 }
-
 
 html {
   scroll-behavior: smooth;
 }
 
-
 body {
-  font-family:
-    "Segoe UI",
-    Tahoma,
-    Geneva,
-    Verdana,
-    sans-serif;
-
-  background:
-    linear-gradient(
-      135deg,
-      #f4f9fc 0%,
-      #eef6fb 100%
-    );
-
-  color: #243447;
+  margin: 0;
 
   min-height: 100vh;
 
-  line-height: 1.5;
-}
+  background: linear-gradient(135deg, #f4fbff 0%, #eef7fb 45%, #f8fcfe 100%);
 
+  color: #17324d;
+
+  font-family:
+    Inter,
+    -apple-system,
+    BlinkMacSystemFont,
+    "Segoe UI",
+    Roboto,
+    Arial,
+    sans-serif;
+}
 
 button,
 input,
 select,
 textarea {
-  font-family: inherit;
+  font: inherit;
 }
-
 
 button {
-  -webkit-tap-highlight-color: transparent;
+  cursor: pointer;
 }
-
 
 a {
   text-decoration: none;
-  color: inherit;
 }
 
-
 /* ============================================================
-   DASHBOARD LAYOUT
+   MAIN DASHBOARD LAYOUT
    ============================================================ */
 
 .dashboard {
-  display: flex;
-
   min-height: 100vh;
 
-  width: 100%;
-}
+  display: grid;
 
+  grid-template-columns:
+    260px
+    minmax(0, 1fr);
+}
 
 /* ============================================================
    SIDEBAR
    ============================================================ */
 
 .sidebar {
-  width: 270px;
+  position: sticky;
 
-  min-width: 270px;
+  top: 0;
 
   height: 100vh;
 
-  position: fixed;
+  display: flex;
 
-  left: 0;
-  top: 0;
+  flex-direction: column;
 
-  z-index: 1000;
+  padding: 24px 16px;
 
-  padding: 28px 18px;
+  background: linear-gradient(180deg, #063b73 0%, #07588d 55%, #087fc1 100%);
 
-  color: white;
+  color: #ffffff;
 
-  background:
-    linear-gradient(
-      180deg,
-      #0077b6 0%,
-      #005b96 45%,
-      #023e8a 100%
-    );
+  box-shadow: 8px 0 30px rgba(6, 59, 115, 0.14);
 
-  box-shadow:
-    8px 0 30px
-    rgba(0, 62, 138, 0.12);
+  z-index: 100;
 
   overflow-y: auto;
 }
-
 
 /* ============================================================
    SIDEBAR LOGO
    ============================================================ */
 
 .logo {
-  text-align: center;
+  display: flex;
 
-  padding: 8px 5px 30px;
+  align-items: center;
 
-  margin-bottom: 20px;
+  gap: 12px;
 
-  border-bottom:
-    1px solid
-    rgba(255, 255, 255, 0.15);
+  padding: 4px 8px 28px;
 }
 
+.logo-icon {
+  width: 46px;
 
-.logo i {
-  display: block;
+  height: 46px;
 
-  font-size: 48px;
+  display: grid;
 
-  margin-bottom: 12px;
+  place-items: center;
 
-  filter:
-    drop-shadow(
-      0 5px 10px
-      rgba(0, 0, 0, 0.15)
-    );
+  border-radius: 14px;
+
+  background: rgba(255, 255, 255, 0.14);
+
+  border: 1px solid rgba(255, 255, 255, 0.22);
+
+  color: #ffffff;
+
+  font-size: 20px;
 }
-
 
 .logo h2 {
-  font-size: 21px;
+  margin: 0;
 
-  font-weight: 700;
+  color: #ffffff;
 
-  letter-spacing: 0.2px;
+  font-size: 18px;
 
-  line-height: 1.3;
+  font-weight: 850;
+
+  line-height: 1.1;
 }
-
 
 .logo p {
-  margin-top: 6px;
+  margin: 4px 0 0;
 
-  font-size: 12px;
+  color: rgba(255, 255, 255, 0.68);
 
-  color:
-    rgba(255, 255, 255, 0.75);
+  font-size: 11px;
+
+  font-weight: 600;
 }
-
 
 /* ============================================================
    SIDEBAR NAVIGATION
@@ -175,142 +156,115 @@ a {
 
   flex-direction: column;
 
-  gap: 8px;
+  gap: 6px;
 }
-
 
 .sidebar nav a {
   display: flex;
 
   align-items: center;
 
-  gap: 14px;
+  gap: 12px;
 
-  padding: 14px 16px;
+  min-height: 46px;
+
+  padding: 11px 13px;
 
   border-radius: 12px;
 
-  font-size: 15px;
+  color: rgba(255, 255, 255, 0.78);
 
-  font-weight: 500;
-
-  color:
-    rgba(255, 255, 255, 0.88);
-
-  transition:
-    background 0.25s ease,
-    color 0.25s ease,
-    transform 0.25s ease;
-}
-
-
-.sidebar nav a i {
-  width: 22px;
-
-  text-align: center;
-
-  font-size: 17px;
-}
-
-
-.sidebar nav a:hover {
-  background:
-    rgba(255, 255, 255, 0.14);
-
-  color: white;
-
-  transform:
-    translateX(3px);
-}
-
-
-.sidebar nav a.active {
-  background: white;
-
-  color: #0077b6;
+  font-size: 14px;
 
   font-weight: 700;
 
-  box-shadow:
-    0 8px 20px
-    rgba(0, 0, 0, 0.12);
+  transition:
+    background 0.2s ease,
+    color 0.2s ease,
+    transform 0.2s ease;
 }
 
+.sidebar nav a i {
+  width: 20px;
+
+  text-align: center;
+
+  font-size: 15px;
+}
+
+.sidebar nav a:hover {
+  color: #ffffff;
+
+  background: rgba(255, 255, 255, 0.1);
+
+  transform: translateX(2px);
+}
+
+.sidebar nav a.active {
+  color: #063b73;
+
+  background: #ffffff;
+
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1);
+}
+
+/* ============================================================
+   SIDEBAR SECURITY
+   ============================================================ */
+
+.sidebar-security {
+  margin-top: auto;
+}
 
 /* ============================================================
    MAIN CONTENT
    ============================================================ */
 
 .content {
-  margin-left: 270px;
+  min-width: 0;
 
-  width: calc(100% - 270px);
-
-  min-height: 100vh;
-
-  padding: 30px;
-
-  transition:
-    margin-left 0.3s ease;
+  padding: 28px 32px 40px;
 }
 
-
 /* ============================================================
-   TOP BAR
+   TOPBAR
    ============================================================ */
 
 .topbar {
-  background: rgba(255, 255, 255, 0.95);
-
-  border:
-    1px solid
-    rgba(0, 119, 182, 0.08);
-
-  border-radius: 18px;
-
-  padding: 22px 26px;
-
   display: flex;
-
-  justify-content: space-between;
 
   align-items: center;
 
+  justify-content: space-between;
+
   gap: 20px;
 
-  margin-bottom: 28px;
-
-  box-shadow:
-    0 12px 35px
-    rgba(0, 50, 90, 0.08);
-
-  backdrop-filter: blur(10px);
+  margin-bottom: 24px;
 }
 
+.topbar-title {
+  min-width: 0;
+}
 
 .topbar h1 {
-  color: #023e8a;
+  margin: 4px 0 4px;
 
-  font-size: 28px;
+  color: #063b73;
 
-  font-weight: 700;
+  font-size: clamp(26px, 3vw, 38px);
 
-  line-height: 1.2;
+  line-height: 1.1;
+
+  font-weight: 900;
 }
 
-
 .topbar p {
-  margin-top: 6px;
+  margin: 0;
 
-  color: #718096;
+  color: #71869a;
 
   font-size: 14px;
 }
-
-
-/* ============================================================
-   TOPBAR ACTIONS
-   ============================================================ */
 
 .topbar-actions {
   display: flex;
@@ -321,12 +275,150 @@ a {
 
   gap: 10px;
 
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
 }
 
+/* ============================================================
+   SECURITY TIMER
+   ============================================================ */
+
+.session-timer {
+  display: inline-flex;
+
+  align-items: center;
+
+  gap: 10px;
+
+  min-width: 155px;
+
+  padding: 9px 14px;
+
+  border: 1px solid rgba(8, 127, 193, 0.18);
+
+  border-radius: 14px;
+
+  background: linear-gradient(135deg, #f4fbff, #ffffff);
+
+  box-shadow: 0 8px 24px rgba(6, 59, 115, 0.1);
+
+  transition:
+    border-color 0.25s ease,
+    background 0.25s ease,
+    box-shadow 0.25s ease,
+    transform 0.25s ease;
+}
+
+.session-timer-icon {
+  width: 35px;
+
+  height: 35px;
+
+  min-width: 35px;
+
+  display: grid;
+
+  place-items: center;
+
+  border-radius: 10px;
+
+  background: #e7f6fd;
+
+  color: #087fc1;
+}
+
+.session-timer-content {
+  display: flex;
+
+  flex-direction: column;
+
+  line-height: 1.1;
+}
+
+.session-timer-label {
+  color: #71869a;
+
+  font-size: 10px;
+
+  font-weight: 800;
+
+  text-transform: uppercase;
+
+  letter-spacing: 0.08em;
+}
+
+#sessionCountdown {
+  margin-top: 4px;
+
+  color: #063b73;
+
+  font-size: 18px;
+
+  font-weight: 900;
+
+  letter-spacing: 0.05em;
+
+  font-variant-numeric: tabular-nums;
+}
+
+/* ============================================================
+   TIMER WARNING
+   ============================================================ */
+
+.session-timer.warning {
+  border-color: rgba(220, 145, 0, 0.45);
+
+  background: #fffaf0;
+}
+
+.session-timer.warning .session-timer-icon {
+  background: #fff0c9;
+
+  color: #b66a00;
+}
+
+.session-timer.warning #sessionCountdown {
+  color: #9a5b00;
+}
+
+/* ============================================================
+   TIMER CRITICAL
+   ============================================================ */
+
+.session-timer.critical,
+.session-timer.danger {
+  border-color: rgba(190, 45, 45, 0.5);
+
+  background: #fff5f5;
+
+  animation: sessionPulse 1s ease-in-out infinite;
+}
+
+.session-timer.critical .session-timer-icon,
+.session-timer.danger .session-timer-icon {
+  background: #ffe2e2;
+
+  color: #b42323;
+}
+
+.session-timer.critical #sessionCountdown,
+.session-timer.danger #sessionCountdown {
+  color: #b42323;
+}
+
+@keyframes sessionPulse {
+  50% {
+    transform: scale(1.025);
+  }
+}
+
+/* ============================================================
+   HEADER BUTTONS
+   ============================================================ */
 
 .home-btn,
 .logout-btn {
+  min-height: 42px;
+
   display: inline-flex;
 
   align-items: center;
@@ -335,21 +427,13 @@ a {
 
   gap: 8px;
 
-  min-height: 42px;
+  padding: 10px 14px;
 
-  padding: 10px 17px;
+  border-radius: 12px;
 
-  border-radius: 10px;
+  font-size: 13px;
 
-  color: white;
-
-  font-size: 14px;
-
-  font-weight: 600;
-
-  border: none;
-
-  cursor: pointer;
+  font-weight: 800;
 
   transition:
     transform 0.2s ease,
@@ -357,115 +441,92 @@ a {
     background 0.2s ease;
 }
 
-
 .home-btn {
-  background:
-    linear-gradient(
-      135deg,
-      #0077b6,
-      #0096c7
-    );
+  color: #063b73;
 
-  box-shadow:
-    0 5px 14px
-    rgba(0, 119, 182, 0.2);
+  background: #ffffff;
+
+  border: 1px solid #dceaf2;
 }
-
-
-.home-btn:hover {
-  background:
-    linear-gradient(
-      135deg,
-      #005f8d,
-      #0077b6
-    );
-
-  transform:
-    translateY(-2px);
-
-  box-shadow:
-    0 8px 18px
-    rgba(0, 119, 182, 0.25);
-}
-
 
 .logout-btn {
-  background:
-    linear-gradient(
-      135deg,
-      #dc3545,
-      #c82333
-    );
+  color: #ffffff;
 
-  box-shadow:
-    0 5px 14px
-    rgba(220, 53, 69, 0.18);
+  background: #b42323;
+
+  border: 1px solid #b42323;
 }
 
-
+.home-btn:hover,
 .logout-btn:hover {
-  background:
-    linear-gradient(
-      135deg,
-      #c82333,
-      #a71d2a
-    );
+  transform: translateY(-1px);
 
-  transform:
-    translateY(-2px);
-
-  box-shadow:
-    0 8px 18px
-    rgba(220, 53, 69, 0.25);
+  box-shadow: 0 8px 20px rgba(6, 59, 115, 0.14);
 }
-
 
 /* ============================================================
    ADMIN USER
    ============================================================ */
 
 .admin-user {
-  display: flex;
+  display: inline-flex;
 
   align-items: center;
 
-  gap: 11px;
+  gap: 8px;
 
-  margin-left: 8px;
+  color: #063b73;
 
-  padding-left: 15px;
+  font-size: 13px;
 
-  border-left:
-    1px solid #e2e8f0;
-
-  color: #34495e;
-
-  font-size: 15px;
-
-  font-weight: 600;
+  font-weight: 750;
 }
-
 
 .admin-user i {
+  font-size: 25px;
+
+  color: #087fc1;
+}
+
+/* ============================================================
+   SECURITY NOTICE
+   ============================================================ */
+
+.security-notice {
+  margin-bottom: 24px;
+
+  padding: 16px 20px;
+
+  border: 1px solid #d9eef8;
+
+  border-radius: 16px;
+
+  background: linear-gradient(135deg, #effaff, #ffffff);
+
   display: flex;
 
   align-items: center;
 
-  justify-content: center;
-
-  width: 40px;
-
-  height: 40px;
-
-  border-radius: 50%;
-
-  color: #0077b6;
-
-  background: #e9f7fd;
-
-  font-size: 22px;
+  gap: 14px;
 }
 
+.security-notice-icon {
+  width: 42px;
+
+  height: 42px;
+
+  min-width: 42px;
+
+  display: grid;
+
+  place-items: center;
+
+  border-radius: 12px;
+
+  background: #dff5ff;
+
+  color: #087fc1;
+}
 
 /* ============================================================
    STATISTICS
@@ -474,300 +535,241 @@ a {
 .stats {
   display: grid;
 
-  grid-template-columns:
-    repeat(
-      auto-fit,
-      minmax(210px, 1fr)
-    );
+  grid-template-columns: repeat(4, minmax(0, 1fr));
 
-  gap: 20px;
+  gap: 18px;
 
   margin-bottom: 28px;
 }
 
+.card {
+  padding: 22px;
+
+  border: 1px solid #e0ebf1;
+
+  border-radius: 18px;
+
+  background: #ffffff;
+
+  box-shadow: 0 10px 30px rgba(6, 59, 115, 0.07);
+
+  transition:
+    transform 0.2s ease,
+    box-shadow 0.2s ease;
+}
+
+.card:hover {
+  transform: translateY(-2px);
+
+  box-shadow: 0 16px 35px rgba(6, 59, 115, 0.1);
+}
+
+.card > i {
+  width: 42px;
+
+  height: 42px;
+
+  display: grid;
+
+  place-items: center;
+
+  margin-bottom: 14px;
+
+  border-radius: 12px;
+
+  background: #eaf7fd;
+
+  color: #087fc1;
+}
+
+.card h3 {
+  margin: 0 0 5px;
+
+  color: #063b73;
+
+  font-size: 28px;
+
+  font-weight: 900;
+}
+
+.card p {
+  margin: 0;
+
+  color: #71869a;
+
+  font-size: 13px;
+
+  font-weight: 650;
+}
 
 /* ============================================================
-   STAT CARD
+   DASHBOARD SECTIONS
    ============================================================ */
 
-.card {
-  position: relative;
-
-  overflow: hidden;
-
-  background: white;
-
-  border:
-    1px solid
-    rgba(0, 119, 182, 0.07);
-
-  border-radius: 16px;
+.dashboard-section {
+  margin-bottom: 30px;
 
   padding: 24px;
 
-  min-height: 160px;
+  border: 1px solid #e0ebf1;
 
-  display: flex;
+  border-radius: 20px;
 
-  flex-direction: column;
+  background: #ffffff;
 
-  align-items: center;
-
-  justify-content: center;
-
-  text-align: center;
-
-  box-shadow:
-    0 10px 28px
-    rgba(0, 50, 90, 0.07);
-
-  transition:
-    transform 0.25s ease,
-    box-shadow 0.25s ease;
+  box-shadow: 0 10px 30px rgba(6, 59, 115, 0.06);
 }
 
-
-.card::before {
-  content: "";
-
-  position: absolute;
-
-  top: 0;
-  left: 0;
-
-  width: 100%;
-
-  height: 4px;
-
-  background:
-    linear-gradient(
-      90deg,
-      #0077b6,
-      #48cae4
-    );
-}
-
-
-.card:hover {
-  transform:
-    translateY(-5px);
-
-  box-shadow:
-    0 16px 38px
-    rgba(0, 50, 90, 0.11);
-}
-
-
-.card i {
+.section-header {
   display: flex;
 
   align-items: center;
 
-  justify-content: center;
+  justify-content: space-between;
 
-  width: 54px;
+  gap: 20px;
 
-  height: 54px;
-
-  margin-bottom: 13px;
-
-  border-radius: 14px;
-
-  background: #eaf8fd;
-
-  color: #0077b6;
-
-  font-size: 25px;
+  margin-bottom: 20px;
 }
 
+.section-header h2 {
+  margin: 0 0 5px;
 
-.card h3 {
-  font-size: 34px;
+  color: #063b73;
 
-  line-height: 1;
+  font-size: 21px;
 
-  color: #023e8a;
-
-  margin-bottom: 8px;
+  font-weight: 900;
 }
 
+.section-header h2 i {
+  margin-right: 7px;
 
-.card p {
-  color: #718096;
-
-  font-size: 14px;
-
-  font-weight: 500;
+  color: #087fc1;
 }
 
+.section-header p {
+  margin: 0;
+
+  color: #71869a;
+
+  font-size: 13px;
+}
 
 /* ============================================================
-   SEARCH AREA
+   SEARCH BAR
    ============================================================ */
 
 .search-bar {
-  position: relative;
+  display: flex;
 
-  margin-bottom: 22px;
+  gap: 10px;
+
+  margin-bottom: 18px;
 }
-
 
 .search-bar input {
   width: 100%;
 
-  height: 52px;
+  min-height: 46px;
 
-  padding:
-    0 18px;
+  padding: 11px 14px;
 
-  border:
-    1px solid #dce5ec;
+  border: 1px solid #dce8ee;
 
   border-radius: 12px;
 
-  background: white;
-
-  color: #2d3748;
-
-  font-size: 15px;
-
   outline: none;
 
-  box-shadow:
-    0 6px 18px
-    rgba(0, 50, 90, 0.04);
+  background: #fbfdfe;
+
+  color: #17324d;
 
   transition:
     border-color 0.2s ease,
     box-shadow 0.2s ease;
 }
 
-
-.search-bar input::placeholder {
-  color: #9aa7b4;
-}
-
-
 .search-bar input:focus {
-  border-color: #0077b6;
+  border-color: #087fc1;
 
-  box-shadow:
-    0 0 0 4px
-    rgba(0, 119, 182, 0.10);
+  box-shadow: 0 0 0 4px rgba(8, 127, 193, 0.1);
 }
-
 
 /* ============================================================
-   BOOKING TABLE CONTAINER
+   TABLE
    ============================================================ */
 
 .table-container {
   width: 100%;
 
-  background: white;
+  overflow-x: auto;
 
-  border:
-    1px solid
-    rgba(0, 119, 182, 0.07);
+  border: 1px solid #e4edf2;
 
   border-radius: 16px;
-
-  padding: 22px;
-
-  box-shadow:
-    0 10px 30px
-    rgba(0, 50, 90, 0.07);
-
-  overflow-x: auto;
 }
-
-
-/* ============================================================
-   TABLE
-   ============================================================ */
 
 table {
   width: 100%;
 
   min-width: 1050px;
 
-  border-collapse: separate;
-
-  border-spacing: 0;
+  border-collapse: collapse;
 }
-
 
 thead {
-  background:
-    linear-gradient(
-      135deg,
-      #0077b6,
-      #005b96
-    );
-
-  color: white;
+  background: linear-gradient(135deg, #f1f9fd, #eaf6fb);
 }
 
+th {
+  padding: 14px 13px;
 
-thead th {
-  padding: 15px 14px;
+  color: #45627b;
+
+  font-size: 11px;
+
+  font-weight: 850;
 
   text-align: left;
 
-  font-size: 13px;
+  text-transform: uppercase;
 
-  font-weight: 700;
-
-  letter-spacing: 0.2px;
+  letter-spacing: 0.06em;
 
   white-space: nowrap;
 }
 
+td {
+  padding: 14px 13px;
 
-thead th:first-child {
-  border-top-left-radius: 10px;
-}
+  border-top: 1px solid #edf2f5;
 
+  color: #17324d;
 
-thead th:last-child {
-  border-top-right-radius: 10px;
-}
-
-
-tbody td {
-  padding: 15px 14px;
-
-  border-bottom:
-    1px solid #edf1f4;
-
-  color: #465463;
-
-  font-size: 14px;
+  font-size: 13px;
 
   vertical-align: middle;
 }
 
-
 tbody tr {
-  background: white;
-
-  transition:
-    background 0.2s ease;
+  transition: background 0.18s ease;
 }
-
 
 tbody tr:hover {
-  background: #f5fbfe;
+  background: #f8fcfe;
 }
 
+.empty-row td {
+  padding: 50px 20px;
 
-tbody tr:last-child td {
-  border-bottom: none;
+  color: #71869a;
+
+  text-align: center;
 }
-
 
 /* ============================================================
-   STATUS BADGES
+   BADGES
    ============================================================ */
 
 .badge {
@@ -775,682 +777,526 @@ tbody tr:last-child td {
 
   align-items: center;
 
-  justify-content: center;
+  gap: 5px;
 
-  min-width: 80px;
+  padding: 6px 9px;
 
-  padding:
-    6px 11px;
+  border-radius: 999px;
 
-  border-radius: 30px;
+  font-size: 10px;
 
-  font-size: 12px;
-
-  font-weight: 700;
+  font-weight: 850;
 
   white-space: nowrap;
 }
 
+.badge.paid,
+.badge.confirmed {
+  color: #146c43;
 
-/* PAYMENT */
-
-.paid {
-  color: #087443;
-
-  background: #dff7e9;
+  background: #eaf8f0;
 }
 
+.badge.pending,
+.badge.waiting {
+  color: #8b5a00;
 
-.pending {
-  color: #8a6200;
-
-  background: #fff3cd;
+  background: #fff7df;
 }
 
+.badge.cancelled {
+  color: #a42626;
 
-/* BOOKING */
-
-.confirmed {
-  color: #087443;
-
-  background: #dff7e9;
+  background: #fff0f0;
 }
-
-
-.waiting {
-  color: #096b80;
-
-  background: #dff7fb;
-}
-
-
-.cancelled {
-  color: #a61b29;
-
-  background: #fde2e5;
-}
-
 
 /* ============================================================
-   ACTION BUTTONS
+   TABLE BUTTONS
    ============================================================ */
 
-td button {
-  border: none;
+.view-btn,
+.confirm-btn,
+.cancel-btn,
+.paid-btn,
+.pending-payment-btn,
+.resend-approval-btn,
+.resend-rejection-btn {
+  display: inline-flex;
 
-  min-height: 34px;
+  align-items: center;
 
-  padding:
-    7px 12px;
+  justify-content: center;
+
+  gap: 5px;
 
   margin: 2px;
 
-  border-radius: 8px;
+  padding: 7px 10px;
 
-  cursor: pointer;
+  border: 0;
 
-  font-size: 12px;
+  border-radius: 9px;
 
-  font-weight: 700;
+  color: #ffffff;
+
+  font-size: 11px;
+
+  font-weight: 800;
 
   transition:
-    transform 0.2s ease,
-    box-shadow 0.2s ease,
-    opacity 0.2s ease;
+    transform 0.15s ease,
+    opacity 0.15s ease;
 }
-
-
-td button:hover {
-  transform:
-    translateY(-1px);
-}
-
-
-td button:active {
-  transform:
-    translateY(0);
-}
-
-
-td button:disabled {
-  cursor: not-allowed;
-
-  opacity: 0.6;
-
-  transform: none;
-}
-
-
-/* ============================================================
-   VIEW BUTTON
-   ============================================================ */
 
 .view-btn {
-  background:
-    linear-gradient(
-      135deg,
-      #0d6efd,
-      #0b5ed7
-    );
-
-  color: white;
-
-  box-shadow:
-    0 4px 10px
-    rgba(13, 110, 253, 0.15);
+  background: #087fc1;
 }
-
-
-.view-btn:hover {
-  background:
-    linear-gradient(
-      135deg,
-      #0b5ed7,
-      #084298
-    );
-
-  box-shadow:
-    0 6px 14px
-    rgba(13, 110, 253, 0.22);
-}
-
-
-/* ============================================================
-   CONFIRM BUTTON
-   ============================================================ */
 
 .confirm-btn {
-  background:
-    linear-gradient(
-      135deg,
-      #198754,
-      #157347
-    );
-
-  color: white;
-
-  box-shadow:
-    0 4px 10px
-    rgba(25, 135, 84, 0.15);
+  background: #14834b;
 }
-
-
-.confirm-btn:hover {
-  background:
-    linear-gradient(
-      135deg,
-      #157347,
-      #0f5132
-    );
-
-  box-shadow:
-    0 6px 14px
-    rgba(25, 135, 84, 0.22);
-}
-
-
-/* ============================================================
-   CANCEL BUTTON
-   ============================================================ */
 
 .cancel-btn {
-  background:
-    linear-gradient(
-      135deg,
-      #ffc107,
-      #e0a800
-    );
-
-  color: #2d2d2d;
-
-  box-shadow:
-    0 4px 10px
-    rgba(255, 193, 7, 0.15);
+  background: #b42323;
 }
 
-
-.cancel-btn:hover {
-  background:
-    linear-gradient(
-      135deg,
-      #e0a800,
-      #c79100
-    );
-
-  box-shadow:
-    0 6px 14px
-    rgba(255, 193, 7, 0.22);
+.paid-btn {
+  background: #087fc1;
 }
 
+.pending-payment-btn {
+  background: #8b6b00;
+}
+
+.resend-approval-btn {
+  background: #14834b;
+}
+
+.resend-rejection-btn {
+  background: #b42323;
+}
+
+.view-btn:hover,
+.confirm-btn:hover,
+.cancel-btn:hover,
+.paid-btn:hover,
+.pending-payment-btn:hover,
+.resend-approval-btn:hover,
+.resend-rejection-btn:hover {
+  transform: translateY(-1px);
+
+  opacity: 0.9;
+}
+
+button:disabled {
+  cursor: wait;
+}
 
 /* ============================================================
-   DELETE BUTTON
+   PAYMENT SUMMARY
    ============================================================ */
 
-.delete-btn {
-  background:
-    linear-gradient(
-      135deg,
-      #dc3545,
-      #c82333
-    );
+.payment-summary {
+  display: grid;
 
-  color: white;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
 
-  box-shadow:
-    0 4px 10px
-    rgba(220, 53, 69, 0.15);
+  gap: 18px;
 }
-
-
-.delete-btn:hover {
-  background:
-    linear-gradient(
-      135deg,
-      #c82333,
-      #a71d2a
-    );
-
-  box-shadow:
-    0 6px 14px
-    rgba(220, 53, 69, 0.22);
-}
-
 
 /* ============================================================
-   EMPTY TABLE MESSAGE
+   FOOTER
    ============================================================ */
 
-tbody tr.empty-row td {
-  padding: 45px 20px;
+.dashboard-footer {
+  padding: 22px 0 8px;
 
-  text-align: center;
+  display: flex;
 
-  color: #8a97a5;
+  align-items: center;
 
-  font-size: 15px;
+  justify-content: space-between;
+
+  gap: 20px;
+
+  color: #71869a;
+
+  font-size: 12px;
 }
 
-
 /* ============================================================
-   SCROLLBAR
+   MODAL
    ============================================================ */
 
-::-webkit-scrollbar {
-  width: 9px;
-
-  height: 9px;
+#bookingDetailsModal {
+  animation: modalFadeIn 0.2s ease;
 }
 
+@keyframes modalFadeIn {
+  from {
+    opacity: 0;
+  }
 
-::-webkit-scrollbar-track {
-  background: #eaf0f4;
+  to {
+    opacity: 1;
+  }
 }
-
-
-::-webkit-scrollbar-thumb {
-  background:
-    linear-gradient(
-      180deg,
-      #0077b6,
-      #005b96
-    );
-
-  border-radius: 10px;
-}
-
-
-::-webkit-scrollbar-thumb:hover {
-  background: #023e8a;
-}
-
 
 /* ============================================================
-   MOBILE SIDEBAR / DASHBOARD
+   TOAST CONTAINER
+   ============================================================ */
+
+#adminToastContainer {
+  font-family:
+    Inter,
+    -apple-system,
+    BlinkMacSystemFont,
+    "Segoe UI",
+    Arial,
+    sans-serif;
+}
+
+/* ============================================================
+   IMPORTANT:
+   KEEP FULL SIDEBAR WHEN WINDOW GETS SMALLER
+   ============================================================ */
+
+/*
+   We intentionally DO NOT turn the sidebar into a
+   hamburger menu.
+
+   The admin dashboard remains desktop-style when
+   the browser window becomes narrower.
+*/
+
+.sidebar {
+  display: flex !important;
+}
+
+.sidebar nav {
+  display: flex !important;
+}
+
+/* Hide any hamburger/mobile menu controls */
+
+.menu-toggle,
+.mobile-menu-toggle,
+.sidebar-toggle,
+.hamburger,
+.mobile-nav-toggle,
+.nav-toggle {
+  display: none !important;
+}
+
+/* ============================================================
+   MEDIUM DESKTOP WINDOWS
    ============================================================ */
 
 @media (max-width: 1200px) {
+  .dashboard {
+    grid-template-columns:
+      230px
+      minmax(0, 1fr);
+  }
 
   .sidebar {
-    position: relative;
-
-    width: 100%;
-
-    min-width: 100%;
-
-    height: auto;
-
-    max-height: none;
-
-    padding:
-      18px 20px;
+    width: 230px;
   }
-
-
-  .dashboard {
-    flex-direction: column;
-  }
-
-
-  .logo {
-    display: flex;
-
-    align-items: center;
-
-    justify-content: center;
-
-    gap: 12px;
-
-    padding:
-      5px 5px 18px;
-
-    margin-bottom: 15px;
-  }
-
-
-  .logo i {
-    margin: 0;
-
-    font-size: 36px;
-  }
-
-
-  .logo h2 {
-    font-size: 20px;
-  }
-
-
-  .sidebar nav {
-    flex-direction: row;
-
-    flex-wrap: wrap;
-
-    justify-content: center;
-
-    gap: 7px;
-  }
-
-
-  .sidebar nav a {
-    margin: 0;
-
-    padding:
-      10px 14px;
-
-    font-size: 13px;
-  }
-
 
   .content {
-    margin-left: 0;
+    padding: 24px 22px 35px;
+  }
 
-    width: 100%;
+  .stats {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
 
-    padding: 22px;
+  .admin-user span {
+    display: none;
   }
 }
 
-
 /* ============================================================
-   TABLET
+   SMALLER DESKTOP
    ============================================================ */
 
-@media (max-width: 900px) {
+@media (max-width: 950px) {
+  .dashboard {
+    grid-template-columns:
+      205px
+      minmax(0, 1fr);
+  }
+
+  .sidebar {
+    width: 205px;
+
+    padding: 20px 11px;
+  }
+
+  .logo {
+    padding: 3px 5px 22px;
+  }
+
+  .logo h2 {
+    font-size: 16px;
+  }
+
+  .sidebar nav a {
+    padding: 10px 9px;
+
+    font-size: 12px;
+  }
+
+  .sidebar nav a i {
+    width: 18px;
+  }
+
+  .content {
+    padding: 20px 18px 30px;
+  }
 
   .topbar {
     align-items: flex-start;
-
-    flex-direction: column;
   }
-
 
   .topbar-actions {
-    width: 100%;
-
-    justify-content: flex-start;
+    gap: 6px;
   }
 
+  .session-timer {
+    min-width: 125px;
 
-  .admin-user {
-    margin-left: 0;
-
-    padding-left: 0;
-
-    border-left: none;
+    padding: 8px 10px;
   }
-
-
-  .stats {
-    grid-template-columns:
-      repeat(
-        2,
-        minmax(0, 1fr)
-      );
-  }
-}
-
-
-/* ============================================================
-   MOBILE
-   ============================================================ */
-
-@media (max-width: 600px) {
-
-  body {
-    background: #f4f7fb;
-  }
-
-
-  .sidebar {
-    padding:
-      15px 12px;
-  }
-
-
-  .logo {
-    flex-direction: column;
-
-    gap: 5px;
-
-    padding-bottom: 15px;
-  }
-
-
-  .logo i {
-    font-size: 34px;
-  }
-
-
-  .logo h2 {
-    font-size: 18px;
-  }
-
-
-  .sidebar nav {
-    display: grid;
-
-    grid-template-columns:
-      repeat(
-        2,
-        minmax(0, 1fr)
-      );
-
-    gap: 7px;
-  }
-
-
-  .sidebar nav a {
-    justify-content: center;
-
-    padding:
-      11px 8px;
-
-    font-size: 12px;
-
-    text-align: center;
-  }
-
-
-  .sidebar nav a i {
-    width: auto;
-
-    font-size: 14px;
-  }
-
-
-  .content {
-    padding: 12px;
-  }
-
-
-  .topbar {
-    padding: 18px;
-
-    border-radius: 14px;
-
-    margin-bottom: 18px;
-  }
-
-
-  .topbar h1 {
-    font-size: 23px;
-  }
-
-
-  .topbar p {
-    font-size: 13px;
-  }
-
-
-  .topbar-actions {
-    width: 100%;
-
-    display: grid;
-
-    grid-template-columns:
-      1fr 1fr;
-
-    gap: 8px;
-  }
-
 
   .home-btn,
   .logout-btn {
-    width: 100%;
-
-    padding:
-      10px 8px;
-
-    font-size: 12px;
+    padding: 9px 10px;
   }
 
+  .home-btn span,
+  .logout-btn span {
+    display: none;
+  }
 
   .admin-user {
-    grid-column:
-      1 / -1;
-
-    justify-content: flex-start;
-
-    padding-top: 8px;
-  }
-
-
-  .stats {
-    grid-template-columns:
-      1fr;
-
-    gap: 12px;
-
-    margin-bottom: 18px;
-  }
-
-
-  .card {
-    min-height: 135px;
-
-    padding: 20px;
-  }
-
-
-  .card h3 {
-    font-size: 30px;
-  }
-
-
-  .search-bar {
-    margin-bottom: 15px;
-  }
-
-
-  .search-bar input {
-    height: 48px;
-
-    font-size: 14px;
-  }
-
-
-  .table-container {
-    padding: 10px;
-
-    border-radius: 12px;
-  }
-
-
-  table {
-    min-width: 950px;
-  }
-
-
-  thead th,
-  tbody td {
-    padding:
-      12px 10px;
-
-    font-size: 12px;
-  }
-
-
-  td button {
-    min-height: 32px;
-
-    padding:
-      6px 9px;
-
-    font-size: 11px;
-  }
-
-
-  .badge {
-    min-width: 70px;
-
-    padding:
-      5px 8px;
-
-    font-size: 11px;
+    display: none;
   }
 }
 
-
 /* ============================================================
-   VERY SMALL PHONES
+   NARROW BROWSER WINDOW
    ============================================================ */
 
-@media (max-width: 380px) {
+@media (max-width: 780px) {
+  /*
+       IMPORTANT:
+       Still NO hamburger menu.
+       Sidebar remains visible.
+    */
 
-  .sidebar nav {
+  .dashboard {
     grid-template-columns:
-      1fr;
+      185px
+      minmax(0, 1fr);
   }
 
+  .sidebar {
+    width: 185px;
+  }
+
+  .logo-icon {
+    width: 40px;
+
+    height: 40px;
+  }
+
+  .logo h2 {
+    font-size: 14px;
+  }
+
+  .logo p {
+    font-size: 9px;
+  }
+
+  .sidebar nav a {
+    gap: 8px;
+
+    font-size: 11px;
+  }
+
+  .content {
+    padding: 18px 14px 28px;
+  }
+
+  .topbar {
+    flex-direction: column;
+  }
+
+  .topbar-actions {
+    width: 100%;
+
+    justify-content: flex-start;
+
+    overflow-x: auto;
+
+    padding-bottom: 3px;
+  }
+
+  .session-timer {
+    flex-shrink: 0;
+  }
+
+  .stats {
+    grid-template-columns: 1fr;
+  }
+
+  .payment-summary {
+    grid-template-columns: 1fr;
+  }
+
+  .dashboard-section {
+    padding: 18px;
+  }
+
+  .dashboard-footer {
+    flex-direction: column;
+
+    align-items: flex-start;
+  }
+}
+
+/* ============================================================
+   VERY NARROW WINDOW
+   ============================================================ */
+
+@media (max-width: 600px) {
+  .dashboard {
+    grid-template-columns:
+      165px
+      minmax(0, 1fr);
+  }
+
+  .sidebar {
+    width: 165px;
+
+    padding: 16px 8px;
+  }
+
+  .logo {
+    justify-content: center;
+
+    padding-bottom: 18px;
+  }
+
+  .logo-icon {
+    width: 36px;
+
+    height: 36px;
+
+    font-size: 15px;
+  }
+
+  .logo h2 {
+    display: none;
+  }
+
+  .logo p {
+    display: none;
+  }
 
   .sidebar nav a {
     justify-content: flex-start;
 
-    text-align: left;
+    padding: 10px 8px;
   }
 
-
-  .topbar-actions {
-    grid-template-columns:
-      1fr;
+  .sidebar nav a span {
+    display: none;
   }
 
+  .sidebar nav a i {
+    width: 100%;
+  }
 
-  .admin-user {
-    grid-column:
-      auto;
+  .sidebar-security {
+    display: none;
+  }
+
+  .content {
+    padding: 14px 10px 25px;
+  }
+
+  .topbar h1 {
+    font-size: 25px;
+  }
+
+  .topbar p {
+    font-size: 12px;
+  }
+
+  .session-timer {
+    min-width: 118px;
+  }
+
+  .session-timer-label {
+    display: none;
+  }
+
+  .session-timer-icon {
+    width: 31px;
+
+    height: 31px;
+
+    min-width: 31px;
+  }
+
+  #sessionCountdown {
+    font-size: 16px;
+  }
+
+  .home-btn,
+  .logout-btn {
+    min-width: 40px;
+
+    width: 40px;
+
+    padding: 9px;
+  }
+
+  .dashboard-section {
+    padding: 14px;
+
+    border-radius: 16px;
+  }
+
+  .section-header h2 {
+    font-size: 18px;
   }
 }
-
 
 /* ============================================================
    ACCESSIBILITY
    ============================================================ */
 
-button:focus-visible,
-a:focus-visible,
-input:focus-visible {
-  outline:
-    3px solid
-    rgba(0, 119, 182, 0.25);
+:focus-visible {
+  outline: 3px solid rgba(8, 127, 193, 0.35);
 
   outline-offset: 2px;
 }
-
 
 /* ============================================================
    REDUCED MOTION
    ============================================================ */
 
 @media (prefers-reduced-motion: reduce) {
-
-  *,
-  *::before,
-  *::after {
+  * {
     scroll-behavior: auto !important;
 
-    transition: none !important;
+    animation-duration: 0.01ms !important;
 
-    animation: none !important;
+    animation-iteration-count: 1 !important;
+
+    transition-duration: 0.01ms !important;
   }
 }

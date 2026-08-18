@@ -1,0 +1,254 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1.0" />
+    <title>Verify Identity | Millrod Swim Academy</title>
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css"
+    />
+    <style>
+      * {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+      }
+      body {
+        min-height: 100vh;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 20px;
+        font-family: "Segoe UI", Inter, Arial, sans-serif;
+        background:
+          radial-gradient(
+            circle at 10% 10%,
+            rgba(32, 199, 232, 0.2),
+            transparent 30%
+          ),
+          linear-gradient(135deg, #eaf8ff, #f8fcff);
+        color: #102a43;
+      }
+      .card {
+        width: min(520px, 100%);
+        padding: 48px;
+        border-radius: 30px;
+        background: #fff;
+        box-shadow: 0 30px 75px rgba(6, 59, 115, 0.16);
+        text-align: center;
+      }
+      .icon {
+        width: 88px;
+        height: 88px;
+        margin: 0 auto 22px;
+        display: grid;
+        place-items: center;
+        border-radius: 28px;
+        color: #fff;
+        font-size: 36px;
+        background: linear-gradient(145deg, #087fc1, #063b73);
+        box-shadow: 0 16px 30px rgba(8, 127, 193, 0.2);
+      }
+      h1 {
+        font-size: 28px;
+        color: #063b73;
+        margin-bottom: 8px;
+      }
+      .subtitle {
+        color: #71879b;
+        font-size: 13px;
+        line-height: 1.6;
+      }
+      .phone {
+        margin: 22px 0;
+        padding: 14px;
+        border-radius: 13px;
+        background: #f3fbff;
+        border: 1px solid #d9eff9;
+        color: #31546e;
+        font-size: 13px;
+      }
+      .phone strong {
+        color: #063b73;
+      }
+      .error {
+        padding: 13px;
+        margin-bottom: 17px;
+        border-radius: 12px;
+        background: #fff2f3;
+        border: 1px solid #ffd2d7;
+        color: #b42335;
+        font-size: 13px;
+      }
+      label {
+        display: block;
+        text-align: left;
+        margin-bottom: 8px;
+        color: #314c65;
+        font-size: 13px;
+        font-weight: 700;
+      }
+      input {
+        width: 100%;
+        height: 62px;
+        text-align: center;
+        letter-spacing: 10px;
+        font-size: 27px;
+        font-weight: 700;
+        border: 1px solid #dbeaf3;
+        border-radius: 15px;
+        outline: none;
+        color: #063b73;
+      }
+      input:focus {
+        border-color: #087fc1;
+        box-shadow: 0 0 0 4px rgba(8, 127, 193, 0.1);
+      }
+      .verify {
+        width: 100%;
+        min-height: 56px;
+        margin-top: 18px;
+        border: 0;
+        border-radius: 15px;
+        background: linear-gradient(135deg, #087fc1, #063b73);
+        color: #fff;
+        font: inherit;
+        font-weight: 750;
+        cursor: pointer;
+      }
+      .verify:disabled {
+        opacity: 0.7;
+        cursor: not-allowed;
+      }
+      .resend {
+        margin-top: 18px;
+        border: 0;
+        background: none;
+        color: #087fc1;
+        font: inherit;
+        font-size: 12px;
+        font-weight: 700;
+        cursor: pointer;
+      }
+      .back {
+        display: inline-block;
+        margin-top: 15px;
+        color: #71879b;
+        text-decoration: none;
+        font-size: 12px;
+      }
+      .secure {
+        margin-top: 24px;
+        color: #8294a3;
+        font-size: 11px;
+      }
+      .secure i {
+        color: #16865b;
+        margin-right: 5px;
+      }
+      .flash {
+        padding: 12px;
+        margin-bottom: 15px;
+        border-radius: 12px;
+        background: #effbf6;
+        color: #16865b;
+        border: 1px solid #cdeee0;
+        font-size: 12px;
+      }
+      @media (max-width: 500px) {
+        .card {
+          padding: 34px 22px;
+          border-radius: 24px;
+        }
+        h1 {
+          font-size: 24px;
+        }
+      }
+    </style>
+  </head>
+
+  <body>
+    <main class="card">
+      <div class="icon">
+        <i class="fa-solid fa-mobile-screen-button"></i>
+      </div>
+
+      <h1>Verify your identity</h1>
+
+      <p class="subtitle">
+        We've sent a one-time verification code to your registered administrator
+        phone number.
+      </p>
+
+      <div class="phone">
+        <i class="fa-solid fa-shield-halved"></i>
+        <strong> Your phone is the final security step.</strong>
+      </div>
+
+      {% with messages = get_flashed_messages(with_categories=true) %} {% for
+      category, message in messages %}
+      <div class="flash">{{ message }}</div>
+      {% endfor %} {% endwith %} {% if error %}
+      <div class="error" role="alert">
+        <i class="fa-solid fa-circle-exclamation"></i>
+        {{ error }}
+      </div>
+      {% endif %}
+
+      <form method="POST" id="verifyForm">
+        <label for="code">6-digit verification code</label>
+
+        <input
+          id="code"
+          name="code"
+          type="text"
+          inputmode="numeric"
+          autocomplete="one-time-code"
+          maxlength="6"
+          pattern="[0-9]{6}"
+          placeholder="••••••"
+          required
+          autofocus
+        />
+
+        <button class="verify" id="verifyButton" type="submit">
+          <i class="fa-solid fa-circle-check"></i>
+          Verify & Continue
+        </button>
+      </form>
+
+      <form method="POST" action="{{ url_for('admin_auth.resend_code') }}">
+        <button class="resend" type="submit">
+          <i class="fa-solid fa-rotate"></i>
+          Send me a new code
+        </button>
+      </form>
+
+      <a class="back" href="{{ url_for('admin_auth.admin_login') }}">
+        ← Back to login
+      </a>
+
+      <div class="secure">
+        <i class="fa-solid fa-lock"></i>
+        Two-step administrator verification
+      </div>
+    </main>
+
+    <script>
+      const code = document.getElementById("code");
+      const form = document.getElementById("verifyForm");
+      const button = document.getElementById("verifyButton");
+
+      code.addEventListener("input", () => {
+        code.value = code.value.replace(/\D/g, "").slice(0, 6);
+      });
+
+      form.addEventListener("submit", () => {
+        button.disabled = true;
+        button.innerHTML =
+          '<i class="fa-solid fa-spinner fa-spin"></i> Verifying...';
+      });
+    </script>
+  </body>
+</html>

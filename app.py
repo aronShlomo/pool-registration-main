@@ -1,11 +1,17 @@
 import os
-
+from admin_auth import admin_auth_bp
 import stripe
+
+from datetime import datetime, timezone
 
 from flask import (
     Flask,
     render_template,
-    jsonify
+    jsonify,
+    request,
+    session,
+    redirect,
+    url_for,
 )
 
 from config import (
@@ -46,6 +52,189 @@ app = Flask(
 app.config.from_object(Config)
 
 app.config["SECRET_KEY"] = Config.SECRET_KEY
+
+
+# ============================================================
+# ADMIN SECURITY
+# ============================================================
+#
+# The admin dashboard automatically logs out after
+# 5 minutes without activity.
+#
+# This is enforced SERVER-SIDE.
+#
+# The JavaScript timer is only the visual countdown.
+# The server is the actual security protection.
+# ============================================================
+
+ADMIN_SESSION_TIMEOUT = 5 * 60
+
+
+# ============================================================
+# ADMIN AUTHENTICATION PATHS
+# ============================================================
+#
+# These routes must remain accessible while the user is
+# logging in or verifying the email security code.
+# ============================================================
+
+ADMIN_AUTH_PATHS = {
+    "/admin/login",
+    "/admin/verify",
+    "/admin/resend-code",
+    "/admin/logout",
+}
+
+
+# ============================================================
+# ADMIN SESSION TIMEOUT
+# ============================================================
+
+@app.before_request
+def enforce_admin_session_timeout():
+
+    path = request.path.rstrip("/") or "/"
+
+
+    # --------------------------------------------------------
+    # ONLY PROTECT ADMIN ROUTES
+    # --------------------------------------------------------
+
+    if not path.startswith("/admin"):
+        return None
+
+
+    # --------------------------------------------------------
+    # LOGIN / VERIFICATION ROUTES
+    # --------------------------------------------------------
+    #
+    # These routes must never be blocked by the timeout.
+    # --------------------------------------------------------
+
+    if path in ADMIN_AUTH_PATHS:
+        return None
+
+
+    # --------------------------------------------------------
+    # CHECK AUTHENTICATION
+    # --------------------------------------------------------
+
+    if session.get(
+        "admin_authenticated"
+    ) is not True:
+
+        return redirect(
+            url_for(
+                "admin_auth.admin_login"
+            )
+        )
+
+
+    # --------------------------------------------------------
+    # CURRENT TIME
+    # --------------------------------------------------------
+
+    now = datetime.now(
+        timezone.utc
+    ).timestamp()
+
+
+    # --------------------------------------------------------
+    # LAST ADMIN ACTIVITY
+    # --------------------------------------------------------
+
+    last_activity = session.get(
+        "admin_last_activity"
+    )
+
+
+    # --------------------------------------------------------
+    # NO ACTIVITY TIMESTAMP
+    # --------------------------------------------------------
+
+    if last_activity is None:
+
+        print(
+            "ADMIN SESSION HAS NO ACTIVITY TIMESTAMP."
+        )
+
+        session.clear()
+
+        return redirect(
+            url_for(
+                "admin_auth.admin_login",
+                timeout=1
+            )
+        )
+
+
+    # --------------------------------------------------------
+    # CONVERT TIMESTAMP
+    # --------------------------------------------------------
+
+    try:
+
+        last_activity = float(
+            last_activity
+        )
+
+    except (
+        TypeError,
+        ValueError
+    ):
+
+        print(
+            "INVALID ADMIN ACTIVITY TIMESTAMP."
+        )
+
+        session.clear()
+
+        return redirect(
+            url_for(
+                "admin_auth.admin_login",
+                timeout=1
+            )
+        )
+
+
+    # --------------------------------------------------------
+    # CALCULATE INACTIVITY
+    # --------------------------------------------------------
+
+    elapsed = (
+        now -
+        last_activity
+    )
+
+
+    # --------------------------------------------------------
+    # 5 MINUTES EXPIRED
+    # --------------------------------------------------------
+
+    if elapsed >= ADMIN_SESSION_TIMEOUT:
+
+        print(
+            "ADMIN SESSION EXPIRED "
+            "AFTER 5 MINUTES OF INACTIVITY."
+        )
+
+        session.clear()
+
+        return redirect(
+            url_for(
+                "admin_auth.admin_login",
+                timeout=1
+            )
+        )
+
+
+    # --------------------------------------------------------
+    # UPDATE LAST ACTIVITY
+    # --------------------------------------------------------
+
+    session["admin_last_activity"] = now
+
+    return None
 
 
 # ============================================================
@@ -100,11 +289,6 @@ except Exception as database_error:
         repr(database_error)
     )
 
-    # Do not hide the error.
-    #
-    # Render should show the actual database problem
-    # in the deployment logs.
-
     raise
 
 
@@ -139,6 +323,8 @@ app.register_blueprint(
     booking_bp
 )
 
+app.register_blueprint(admin_auth_bp)
+
 app.register_blueprint(
     payment_bp
 )
@@ -155,24 +341,6 @@ app.register_blueprint(
 # ============================================================
 # SCHEDULER
 # ============================================================
-#
-# IMPORTANT:
-#
-# Render/Gunicorn can run multiple workers.
-#
-# If every worker starts APScheduler, the same reminder
-# could potentially be sent multiple times.
-#
-# Therefore the scheduler is controlled with:
-#
-# ENABLE_SCHEDULER=true
-#
-# For a Render service dedicated to one application process,
-# enable it.
-#
-# If you later use multiple Gunicorn workers, move scheduled
-# jobs to a separate worker/service or external scheduler.
-# ============================================================
 
 scheduler = None
 
@@ -181,8 +349,8 @@ def start_scheduler():
 
     global scheduler
 
-    if scheduler is not None:
 
+    if scheduler is not None:
         return
 
 
@@ -192,7 +360,7 @@ def start_scheduler():
 
 
     # --------------------------------------------------------
-    # DAILY REMINDER
+    # DAILY LESSON REMINDERS
     # --------------------------------------------------------
 
     scheduler.add_job(
@@ -216,14 +384,15 @@ def start_scheduler():
 
 
     # --------------------------------------------------------
-    # EXPIRED PENDING BOOKINGS
+    # EXPIRED BOOKING CLEANUP
     # --------------------------------------------------------
 
     scheduler.add_job(
 
-        func=lambda: remove_expired_pending_bookings(
-            Config.BOOKING_HOLD_MINUTES
-        ),
+        func=lambda:
+            remove_expired_pending_bookings(
+                Config.BOOKING_HOLD_MINUTES
+            ),
 
         trigger="interval",
 
@@ -248,7 +417,7 @@ def start_scheduler():
 
 
 # ============================================================
-# ENABLE SCHEDULER ONLY WHEN REQUESTED
+# ENABLE SCHEDULER
 # ============================================================
 
 ENABLE_SCHEDULER = (
@@ -311,24 +480,6 @@ def test():
     return (
         "Millrod Swim Academy Flask Server Running!"
     )
-
-
-# ============================================================
-# PAYMENT SUCCESS
-# ============================================================
-#
-# payment.py owns the actual /payment-success route.
-#
-# We intentionally do NOT create another route here.
-# ============================================================
-
-
-# ============================================================
-# PAYMENT CANCEL
-# ============================================================
-#
-# payment.py owns the actual /payment-cancel route.
-# ============================================================
 
 
 # ============================================================
