@@ -1,0 +1,447 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+    <title>Millrod Swim Academy</title>
+
+    <style>
+      * {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+      }
+
+      body {
+        min-height: 100vh;
+
+        display: flex;
+        align-items: center;
+        justify-content: center;
+
+        padding: 20px;
+
+        font-family: Arial, Helvetica, sans-serif;
+
+        background: linear-gradient(135deg, #e9f8ff, #f7fbff);
+
+        color: #263238;
+      }
+
+      .container {
+        width: 100%;
+        max-width: 560px;
+      }
+
+      .card {
+        background: #ffffff;
+
+        border-radius: 24px;
+
+        overflow: hidden;
+
+        box-shadow: 0 20px 60px rgba(0, 0, 0, 0.12);
+      }
+
+      /* =========================================
+       HEADER
+    ========================================= */
+
+      .header {
+        background: linear-gradient(135deg, #0077b6, #023e8a);
+
+        color: #ffffff;
+
+        text-align: center;
+
+        padding: 40px 25px;
+      }
+
+      .logo {
+        font-size: 55px;
+
+        margin-bottom: 12px;
+      }
+
+      .header h1 {
+        font-size: 28px;
+
+        margin-bottom: 8px;
+      }
+
+      .header p {
+        font-size: 15px;
+
+        opacity: 0.9;
+      }
+
+      /* =========================================
+       CONTENT
+    ========================================= */
+
+      .content {
+        padding: 40px 35px;
+
+        text-align: center;
+      }
+
+      .success-icon {
+        width: 80px;
+        height: 80px;
+
+        margin: 0 auto 25px;
+
+        display: flex;
+
+        align-items: center;
+
+        justify-content: center;
+
+        border-radius: 50%;
+
+        background: #e8f7ee;
+
+        color: #198754;
+
+        font-size: 42px;
+
+        font-weight: bold;
+      }
+
+      .success-title {
+        color: #198754;
+
+        font-size: 28px;
+
+        margin-bottom: 15px;
+      }
+
+      .message {
+        color: #666666;
+
+        font-size: 16px;
+
+        line-height: 1.7;
+
+        margin-bottom: 30px;
+      }
+
+      /* =========================================
+       BOOKING INFORMATION
+    ========================================= */
+
+      .booking-box {
+        background: #f6fbfe;
+
+        border: 1px solid #dceef7;
+
+        border-radius: 16px;
+
+        padding: 22px;
+
+        text-align: left;
+
+        margin-bottom: 30px;
+      }
+
+      .booking-box h3 {
+        color: #023e8a;
+
+        font-size: 18px;
+
+        margin-bottom: 15px;
+      }
+
+      .detail {
+        display: flex;
+
+        justify-content: space-between;
+
+        gap: 15px;
+
+        padding: 9px 0;
+
+        border-bottom: 1px solid #e5eef3;
+
+        font-size: 14px;
+      }
+
+      .detail:last-child {
+        border-bottom: none;
+      }
+
+      .detail-label {
+        color: #777777;
+
+        font-weight: 600;
+      }
+
+      .detail-value {
+        color: #263238;
+
+        font-weight: 600;
+
+        text-align: right;
+      }
+
+      /* =========================================
+       NEXT STEP
+    ========================================= */
+
+      .next-step {
+        background: #fff8e6;
+
+        border-left: 5px solid #f4b400;
+
+        border-radius: 10px;
+
+        padding: 18px;
+
+        margin-bottom: 28px;
+
+        text-align: left;
+      }
+
+      .next-step strong {
+        display: block;
+
+        color: #8a6500;
+
+        margin-bottom: 7px;
+      }
+
+      .next-step p {
+        color: #665500;
+
+        line-height: 1.5;
+
+        font-size: 14px;
+      }
+
+      /* =========================================
+       BUTTON
+    ========================================= */
+
+      .button {
+        display: inline-block;
+
+        width: 100%;
+
+        padding: 15px 20px;
+
+        border-radius: 10px;
+
+        background: #0077b6;
+
+        color: #ffffff;
+
+        text-decoration: none;
+
+        font-size: 16px;
+
+        font-weight: bold;
+
+        transition: 0.2s;
+      }
+
+      .button:hover {
+        background: #005f8f;
+      }
+
+      /* =========================================
+       FOOTER
+    ========================================= */
+
+      .footer {
+        background: #f5f8fa;
+
+        text-align: center;
+
+        padding: 20px;
+
+        color: #777777;
+
+        font-size: 13px;
+
+        line-height: 1.6;
+      }
+
+      /* =========================================
+       MOBILE
+    ========================================= */
+
+      @media (max-width: 600px) {
+        .content {
+          padding: 30px 22px;
+        }
+
+        .header {
+          padding: 32px 20px;
+        }
+
+        .header h1 {
+          font-size: 24px;
+        }
+
+        .success-title {
+          font-size: 24px;
+        }
+
+        .detail {
+          flex-direction: column;
+
+          gap: 4px;
+        }
+
+        .detail-value {
+          text-align: left;
+        }
+      }
+    </style>
+  </head>
+
+  <body>
+    <div class="container">
+      <div class="card">
+        <!-- =====================================
+           HEADER
+      ====================================== -->
+
+        <div class="header">
+          <div class="logo">🏊</div>
+
+          <h1>Millrod Swim Academy</h1>
+
+          <p>Professional Swimming Lessons</p>
+        </div>
+
+        <!-- =====================================
+           CONTENT
+      ====================================== -->
+
+        <div class="content">
+          <div class="success-icon">✓</div>
+
+          <h2 class="success-title">Booking Approved!</h2>
+
+          <p class="message">
+            The swimming lesson request has been successfully approved.
+
+            <br />
+
+            The customer will receive a confirmation email with the available
+            payment options.
+          </p>
+
+          <!-- ===================================
+             BOOKING DETAILS
+        ==================================== -->
+
+          {% if booking %}
+
+          <div class="booking-box">
+            <h3>Booking Details</h3>
+
+            {% if booking.name %}
+
+            <div class="detail">
+              <span class="detail-label"> Student </span>
+
+              <span class="detail-value"> {{ booking.name }} </span>
+            </div>
+
+            {% endif %} {% if booking.lesson_type %}
+
+            <div class="detail">
+              <span class="detail-label"> Lesson </span>
+
+              <span class="detail-value"> {{ booking.lesson_type }} </span>
+            </div>
+
+            {% endif %} {% if booking.package %}
+
+            <div class="detail">
+              <span class="detail-label"> Package </span>
+
+              <span class="detail-value"> {{ booking.package }} </span>
+            </div>
+
+            {% endif %} {% if booking.lesson_date %}
+
+            <div class="detail">
+              <span class="detail-label"> Date </span>
+
+              <span class="detail-value"> {{ booking.lesson_date }} </span>
+            </div>
+
+            {% endif %} {% if booking.lesson_time %}
+
+            <div class="detail">
+              <span class="detail-label"> Time </span>
+
+              <span class="detail-value"> {{ booking.lesson_time }} </span>
+            </div>
+
+            {% endif %} {% if booking.price %}
+
+            <div class="detail">
+              <span class="detail-label"> Amount </span>
+
+              <span class="detail-value">
+                {% if booking.price|string|first == '$' %} {{ booking.price }}
+                {% else %} ${{ booking.price }} {% endif %}
+              </span>
+            </div>
+
+            {% endif %} {% if booking.id %}
+
+            <div class="detail">
+              <span class="detail-label"> Booking ID </span>
+
+              <span class="detail-value"> #{{ booking.id }} </span>
+            </div>
+
+            {% endif %}
+          </div>
+
+          {% endif %}
+
+          <!-- ===================================
+             NEXT STEP
+        ==================================== -->
+
+          <div class="next-step">
+            <strong> ✓ Customer Notification </strong>
+
+            <p>
+              An email has been sent to the customer with the next steps for
+              completing payment.
+            </p>
+          </div>
+
+          <a href="https://millrodswim.com/" class="button">
+            Return to Millrod Swim Academy
+          </a>
+        </div>
+
+        <!-- =====================================
+           FOOTER
+      ====================================== -->
+
+        <div class="footer">
+          <strong> Millrod Swim Academy </strong>
+
+          <br />
+
+          Professional Swimming Lessons
+
+          <br /><br />
+
+          Thank you for choosing us!
+        </div>
+      </div>
+    </div>
+  </body>
+</html>
