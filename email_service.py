@@ -1044,13 +1044,13 @@ def send_user_approved_email(booking):
 
     pay_now_url = (
         f"{domain}"
-        f"/api/pay-now/{booking_id}"
+        f"/pay-now/{booking_id}"
     )
 
 
     pay_later_url = (
         f"{domain}"
-        f"/api/pay-later/{booking_id}"
+        f"/pay-later/{booking_id}"
     )
 
 
@@ -2244,4 +2244,4 @@ def send_booking_approved(booking):
     approval email function is send_user_approved_email().
     """
 
-    return send_user_approved_email(booking)    
+    return send_user_approved_email(booking)  
