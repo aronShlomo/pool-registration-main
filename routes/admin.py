@@ -10,10 +10,15 @@ from flask import (
 
 from database import get_db_connection
 from config import Config
-from email_service import send_payment_options_email
 
 from datetime import datetime
 
+import psycopg2.extras
+
+
+# ============================================================
+# BLUEPRINT
+# ============================================================
 
 admin_bp = Blueprint(
     "admin",
@@ -22,13 +27,14 @@ admin_bp = Blueprint(
 )
 
 
-
-
-# =====================================
-# CHECK LOGIN
-# =====================================
+# ============================================================
+# LOGIN CHECK
+# ============================================================
 
 def admin_required():
+    """
+    Check whether the administrator is logged in.
+    """
 
     return session.get(
         "admin_logged_in",
@@ -36,62 +42,104 @@ def admin_required():
     )
 
 
-
-
-
-# =====================================
+# ============================================================
 # LOGIN
-# =====================================
+# ============================================================
 
-@admin_bp.route("/login", methods=["GET", "POST"])
+@admin_bp.route(
+    "/login",
+    methods=["GET", "POST"]
+)
 def admin_login():
 
-    # Already logged in? Go straight to dashboard.
+    # --------------------------------------------------------
+    # ALREADY LOGGED IN
+    # --------------------------------------------------------
+
     if session.get("admin_logged_in"):
-        return redirect(url_for("admin.admin_dashboard"))
+
+        return redirect(
+            url_for(
+                "admin.admin_dashboard"
+            )
+        )
+
+
+    # --------------------------------------------------------
+    # LOGIN FORM
+    # --------------------------------------------------------
 
     if request.method == "POST":
 
-        username = request.form.get("username")
-        password = request.form.get("password")
+        username = (
+            request.form
+            .get("username", "")
+            .strip()
+        )
+
+        password = (
+            request.form
+            .get("password", "")
+        )
+
+
+        # ----------------------------------------------------
+        # CHECK CREDENTIALS
+        # ----------------------------------------------------
 
         if (
             username == Config.ADMIN_USERNAME
             and password == Config.ADMIN_PASSWORD
         ):
+
+            session.clear()
+
             session["admin_logged_in"] = True
-            return redirect(url_for("admin.admin_dashboard"))
+
+            return redirect(
+                url_for(
+                    "admin.admin_dashboard"
+                )
+            )
+
 
         return render_template(
             "login.html",
-            error="Invalid username or password"
+            error="Invalid username or password."
         )
 
-    return render_template("login.html")
+
+    return render_template(
+        "login.html"
+    )
 
 
-# =====================================
+# ============================================================
 # LOGOUT
-# =====================================
+# ============================================================
 
-@admin_bp.route("/logout")
+@admin_bp.route(
+    "/logout"
+)
 def admin_logout():
 
-    session.pop("admin_logged_in", None)
+    session.clear()
 
-    return redirect("/")
+    return redirect(
+        url_for(
+            "admin.admin_login"
+        )
+    )
 
 
+# ============================================================
+# ADMIN DASHBOARD
+# ============================================================
 
-
-
-# =====================================
-# DASHBOARD
-# =====================================
-
-@admin_bp.route("/")
+@admin_bp.route(
+    "/"
+)
 def admin_dashboard():
-
 
     if not admin_required():
 
@@ -102,181 +150,315 @@ def admin_dashboard():
         )
 
 
+    conn = None
 
-    conn = get_db_connection()
-
-    cursor = conn.cursor()
-
-
-
-    cursor.execute(
-        """
-        SELECT *
-        FROM bookings
-        ORDER BY lesson_date, lesson_time
-        """
-    )
-
-
-    bookings = cursor.fetchall()
-
-
-
-    today = datetime.now().strftime(
-        "%Y-%m-%d"
-    )
-
-
-
-    cursor.execute(
-        """
-        SELECT COUNT(*)
-        FROM bookings
-        WHERE lesson_date=?
-        AND status='confirmed'
-        """,
-        (today,)
-    )
-
-
-    today_lessons = cursor.fetchone()[0]
-
-
-
-
-    cursor.execute(
-        """
-        SELECT COUNT(*)
-        FROM bookings
-        WHERE payment_status='pending'
-        """
-    )
-
-
-    pending_payments = cursor.fetchone()[0]
-
-
-
-
-    cursor.execute(
-        """
-        SELECT COUNT(*)
-        FROM bookings
-        WHERE status='confirmed'
-        """
-    )
-
-
-    confirmed_lessons = cursor.fetchone()[0]
-
-
-
-
-    # Sum revenue of paid bookings (price may be stored like '$80' or '80')
-
-    cursor.execute(
-        """
-        SELECT COALESCE(SUM(CAST(REPLACE(price, '$', '') AS REAL)), 0)
-        FROM bookings
-        WHERE payment_status='paid'
-        """
-    )
-
-    revenue_value = cursor.fetchone()[0] or 0
-
-    # Format to two decimal places (dollars)
     try:
-        revenue = f"{float(revenue_value):.2f}"
-    except Exception:
-        revenue = "0.00"
+
+        conn = get_db_connection()
+
+        cursor = conn.cursor(
+            cursor_factory=psycopg2.extras.RealDictCursor
+        )
 
 
+        # ====================================================
+        # ALL BOOKINGS
+        # ====================================================
 
-    conn.close()
+        cursor.execute(
+            """
+            SELECT *
+            FROM bookings
+            ORDER BY
+                lesson_date ASC,
+                lesson_time ASC,
+                created_at DESC
+            """
+        )
 
-
-
-    return render_template(
-        "admin.html",
-
-        bookings=bookings,
-
-        today_lessons=today_lessons,
-
-        pending_payments=pending_payments,
-
-        confirmed_lessons=confirmed_lessons,
-
-        revenue=revenue
-    )
+        bookings = cursor.fetchall()
 
 
+        # ====================================================
+        # TODAY
+        # ====================================================
+
+        today = datetime.now().strftime(
+            "%Y-%m-%d"
+        )
 
 
+        # ====================================================
+        # TODAY'S CONFIRMED LESSONS
+        # ====================================================
+
+        cursor.execute(
+            """
+            SELECT COUNT(*)
+            FROM bookings
+            WHERE lesson_date = %s
+              AND status = 'confirmed'
+            """,
+            (today,)
+        )
+
+        today_lessons = cursor.fetchone()["count"]
 
 
-# =====================================
-# GET BOOKING
-# =====================================
+        # ====================================================
+        # PENDING APPROVALS
+        # ====================================================
+
+        cursor.execute(
+            """
+            SELECT COUNT(*)
+            FROM bookings
+            WHERE status = 'pending'
+            """
+        )
+
+        pending_approvals = cursor.fetchone()["count"]
+
+
+        # ====================================================
+        # PENDING PAYMENTS
+        # ====================================================
+
+        cursor.execute(
+            """
+            SELECT COUNT(*)
+            FROM bookings
+            WHERE status = 'confirmed'
+              AND payment_status = 'pending'
+            """
+        )
+
+        pending_payments = cursor.fetchone()["count"]
+
+
+        # ====================================================
+        # CONFIRMED LESSONS
+        # ====================================================
+
+        cursor.execute(
+            """
+            SELECT COUNT(*)
+            FROM bookings
+            WHERE status = 'confirmed'
+            """
+        )
+
+        confirmed_lessons = cursor.fetchone()["count"]
+
+
+        # ====================================================
+        # REJECTED BOOKINGS
+        # ====================================================
+
+        cursor.execute(
+            """
+            SELECT COUNT(*)
+            FROM bookings
+            WHERE status = 'rejected'
+            """
+        )
+
+        rejected_bookings = cursor.fetchone()["count"]
+
+
+        # ====================================================
+        # PAID BOOKINGS
+        # ====================================================
+
+        cursor.execute(
+            """
+            SELECT COUNT(*)
+            FROM bookings
+            WHERE payment_status = 'paid'
+            """
+        )
+
+        paid_bookings = cursor.fetchone()["count"]
+
+
+        # ====================================================
+        # REVENUE
+        # ====================================================
+        #
+        # price is stored as "$80.00".
+        #
+        # PostgreSQL removes the "$" and converts it to numeric.
+        # ====================================================
+
+        cursor.execute(
+            """
+            SELECT
+                COALESCE(
+                    SUM(
+                        CAST(
+                            REPLACE(price, '$', '')
+                            AS NUMERIC
+                        )
+                    ),
+                    0
+                ) AS revenue
+            FROM bookings
+            WHERE payment_status = 'paid'
+            """
+        )
+
+        revenue_value = (
+            cursor.fetchone()["revenue"]
+            or 0
+        )
+
+
+        revenue = (
+            f"{float(revenue_value):,.2f}"
+        )
+
+
+        # ====================================================
+        # PAY LATER COUNT
+        # ====================================================
+
+        cursor.execute(
+            """
+            SELECT COUNT(*)
+            FROM bookings
+            WHERE status = 'confirmed'
+              AND payment_method = 'cash_or_zelle'
+              AND payment_status = 'pending'
+            """
+        )
+
+        pay_later_bookings = (
+            cursor.fetchone()["count"]
+        )
+
+
+        return render_template(
+            "admin.html",
+
+            bookings=bookings,
+
+            today_lessons=today_lessons,
+
+            pending_approvals=pending_approvals,
+
+            pending_payments=pending_payments,
+
+            confirmed_lessons=confirmed_lessons,
+
+            rejected_bookings=rejected_bookings,
+
+            paid_bookings=paid_bookings,
+
+            pay_later_bookings=pay_later_bookings,
+
+            revenue=revenue
+        )
+
+
+    except Exception as error:
+
+        print(
+            "ADMIN DASHBOARD ERROR:",
+            repr(error)
+        )
+
+        return (
+            "Unable to load the admin dashboard."
+        ), 500
+
+
+    finally:
+
+        if conn:
+
+            conn.close()
+
+
+# ============================================================
+# GET SINGLE BOOKING
+# ============================================================
 
 @admin_bp.route(
-    "/booking/<int:id>"
+    "/booking/<int:id>",
+    methods=["GET"]
 )
 def get_booking(id):
-
 
     if not admin_required():
 
         return jsonify({
-            "error":"Unauthorized"
-        }),401
+            "success": False,
+            "error": "Unauthorized"
+        }), 401
 
 
+    conn = None
 
-    conn = get_db_connection()
+    try:
 
-    cursor = conn.cursor()
+        conn = get_db_connection()
 
-
-
-    cursor.execute(
-        """
-        SELECT *
-        FROM bookings
-        WHERE id=?
-        """,
-        (id,)
-    )
+        cursor = conn.cursor(
+            cursor_factory=psycopg2.extras.RealDictCursor
+        )
 
 
+        cursor.execute(
+            """
+            SELECT *
+            FROM bookings
+            WHERE id = %s
+            LIMIT 1
+            """,
+            (id,)
+        )
 
-    booking = cursor.fetchone()
+
+        booking = cursor.fetchone()
 
 
-    conn.close()
+        if not booking:
 
+            return jsonify({
+                "success": False,
+                "error": "Booking not found."
+            }), 404
 
-
-    if not booking:
 
         return jsonify({
-            "error":"Booking not found"
-        }),404
+            "success": True,
+            "booking": dict(booking)
+        })
 
 
+    except Exception as error:
 
-    return jsonify(
-        dict(booking)
-    )
+        print(
+            "GET BOOKING ERROR:",
+            repr(error)
+        )
+
+        return jsonify({
+            "success": False,
+            "error": "Unable to load booking."
+        }), 500
 
 
+    finally:
+
+        if conn:
+
+            conn.close()
 
 
-
-
-# =====================================
-# UPDATE STATUS
-# =====================================
+# ============================================================
+# UPDATE BOOKING STATUS
+# ============================================================
 
 @admin_bp.route(
     "/update-status/<int:id>",
@@ -284,94 +466,245 @@ def get_booking(id):
 )
 def update_status(id):
 
-
     if not admin_required():
 
         return jsonify({
-            "error":"Unauthorized"
-        }),401
+            "success": False,
+            "error": "Unauthorized"
+        }), 401
 
 
+    data = request.get_json(
+        silent=True
+    ) or {}
 
-    data = request.json
 
-
-    status = data.get(
-        "status"
+    status = (
+        data.get("status", "")
+        .strip()
+        .lower()
     )
 
 
+    # ========================================================
+    # ALLOWED STATUS VALUES
+    # ========================================================
 
     if status not in [
         "pending",
         "confirmed",
-        "cancelled"
+        "rejected"
     ]:
 
         return jsonify({
-            "error":"Invalid status"
-        }),400
+            "success": False,
+            "error": "Invalid booking status."
+        }), 400
 
 
+    conn = None
 
-    conn = get_db_connection()
+    try:
 
-    cursor = conn.cursor()
+        conn = get_db_connection()
 
-
-
-    cursor.execute(
-        """
-        UPDATE bookings
-
-        SET status=?
-
-        WHERE id=?
-
-        """,
-        (
-            status,
-            id
+        cursor = conn.cursor(
+            cursor_factory=psycopg2.extras.RealDictCursor
         )
-    )
 
 
-    conn.commit()
+        # ----------------------------------------------------
+        # FIND BOOKING
+        # ----------------------------------------------------
 
-    # If booking was confirmed, send payment options email to customer
-    if status == 'confirmed':
-        try:
+        cursor.execute(
+            """
+            SELECT *
+            FROM bookings
+            WHERE id = %s
+            LIMIT 1
+            """,
+            (id,)
+        )
+
+
+        booking = cursor.fetchone()
+
+
+        if not booking:
+
+            return jsonify({
+                "success": False,
+                "error": "Booking not found."
+            }), 404
+
+
+        old_status = booking["status"]
+
+
+        # ----------------------------------------------------
+        # PREVENT INVALID CHANGES
+        # ----------------------------------------------------
+
+        if (
+            old_status == "rejected"
+            and status == "confirmed"
+        ):
+
+            return jsonify({
+                "success": False,
+                "error": (
+                    "A rejected booking cannot be "
+                    "approved from the dashboard."
+                )
+            }), 400
+
+
+        # ----------------------------------------------------
+        # APPROVE
+        # ----------------------------------------------------
+
+        if status == "confirmed":
+
             cursor.execute(
                 """
-                SELECT *
-                FROM bookings
-                WHERE id=?
+                UPDATE bookings
+                SET
+                    status = 'confirmed',
+                    payment_status = 'pending'
+                WHERE id = %s
+                RETURNING *
                 """,
                 (id,)
             )
 
-            booking = cursor.fetchone()
+        # ----------------------------------------------------
+        # REJECT
+        # ----------------------------------------------------
 
-            if booking:
-                # convert sqlite row to dict if necessary
-                send_payment_options_email(dict(booking))
-        except Exception as e:
-            print("Error sending payment options email:", e)
+        elif status == "rejected":
 
-    conn.close()
+            cursor.execute(
+                """
+                UPDATE bookings
+                SET
+                    status = 'rejected'
+                WHERE id = %s
+                RETURNING *
+                """,
+                (id,)
+            )
+
+        # ----------------------------------------------------
+        # PENDING
+        # ----------------------------------------------------
+
+        else:
+
+            cursor.execute(
+                """
+                UPDATE bookings
+                SET
+                    status = 'pending'
+                WHERE id = %s
+                RETURNING *
+                """,
+                (id,)
+            )
 
 
-    return jsonify({
-        "success":True
-    })
+        booking = cursor.fetchone()
+
+        conn.commit()
 
 
+        # ====================================================
+        # SEND APPROPRIATE EMAIL
+        # ====================================================
+
+        if status == "confirmed":
+
+            try:
+
+                from email_service import (
+                    send_user_approved_email
+                )
+
+                send_user_approved_email(
+                    booking
+                )
+
+            except Exception as email_error:
+
+                print(
+                    "APPROVAL EMAIL ERROR:",
+                    repr(email_error)
+                )
 
 
+        elif status == "rejected":
 
-# =====================================
-# CANCEL BOOKING
-# =====================================
+            try:
+
+                from email_service import (
+                    send_user_rejected_email
+                )
+
+                send_user_rejected_email(
+                    booking
+                )
+
+            except Exception as email_error:
+
+                print(
+                    "REJECTION EMAIL ERROR:",
+                    repr(email_error)
+                )
+
+
+        return jsonify({
+
+            "success": True,
+
+            "booking": dict(booking),
+
+            "message": (
+                "Booking updated successfully."
+            )
+        })
+
+
+    except Exception as error:
+
+        if conn:
+
+            conn.rollback()
+
+
+        print(
+            "UPDATE BOOKING STATUS ERROR:",
+            repr(error)
+        )
+
+
+        return jsonify({
+            "success": False,
+            "error": (
+                "Unable to update the booking."
+            )
+        }), 500
+
+
+    finally:
+
+        if conn:
+
+            conn.close()
+
+
+# ============================================================
+# CANCEL / REJECT BOOKING
+# ============================================================
 
 @admin_bp.route(
     "/delete/<int:id>",
@@ -379,41 +712,118 @@ def update_status(id):
 )
 def delete_booking(id):
 
-
     if not admin_required():
 
         return jsonify({
-            "error":"Unauthorized"
-        }),401
+            "success": False,
+            "error": "Unauthorized"
+        }), 401
 
 
+    conn = None
 
-    conn = get_db_connection()
+    try:
 
-    cursor = conn.cursor()
+        conn = get_db_connection()
 
-
-
-    cursor.execute(
-        """
-        UPDATE bookings
-
-        SET status='cancelled'
-
-        WHERE id=?
-
-        """,
-        (id,)
-    )
+        cursor = conn.cursor(
+            cursor_factory=psycopg2.extras.RealDictCursor
+        )
 
 
+        cursor.execute(
+            """
+            SELECT *
+            FROM bookings
+            WHERE id = %s
+            LIMIT 1
+            """,
+            (id,)
+        )
 
-    conn.commit()
 
-    conn.close()
-
+        booking = cursor.fetchone()
 
 
-    return jsonify({
-        "success":True
-    })
+        if not booking:
+
+            return jsonify({
+                "success": False,
+                "error": "Booking not found."
+            }), 404
+
+
+        cursor.execute(
+            """
+            UPDATE bookings
+            SET status = 'rejected'
+            WHERE id = %s
+            RETURNING *
+            """,
+            (id,)
+        )
+
+
+        booking = cursor.fetchone()
+
+        conn.commit()
+
+
+        # ----------------------------------------------------
+        # CUSTOMER NOTIFICATION
+        # ----------------------------------------------------
+
+        try:
+
+            from email_service import (
+                send_user_rejected_email
+            )
+
+            send_user_rejected_email(
+                booking
+            )
+
+        except Exception as email_error:
+
+            print(
+                "REJECTION EMAIL ERROR:",
+                repr(email_error)
+            )
+
+
+        return jsonify({
+
+            "success": True,
+
+            "message": (
+                "Booking rejected successfully."
+            )
+        })
+
+
+    except Exception as error:
+
+        if conn:
+
+            conn.rollback()
+
+
+        print(
+            "REJECT BOOKING ERROR:",
+            repr(error)
+        )
+
+
+        return jsonify({
+            "success": False,
+            "error": (
+                "Unable to reject booking."
+            )
+        }), 500
+
+
+    finally:
+
+        if conn:
+
+            conn.close()

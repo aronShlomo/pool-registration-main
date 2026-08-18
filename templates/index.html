@@ -1,144 +1,330 @@
 <!doctype html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Millrod Swim Academy | Professional Swimming Lessons</title>
 
-    <title>Millrod Swim Academy | Professional Swimming Lessons</title>
+  <meta
+    name="description"
+    content="Millrod Swim Academy provides professional swimming lessons for children and adults. Build confidence, learn water safety, and improve swimming skills with personalized instruction."
+  />
 
-    <meta
-      name="description"
-      content="Millrod Swim Academy provides professional swimming lessons for children and adults. Learn water safety, confidence, and advanced swimming skills."
-    />
+  <meta name="theme-color" content="#0077b6" />
 
-    <link
-      rel="stylesheet"
-      href="{{ url_for('static', filename='style.css') }}"
-    />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link
+    href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap"
+    rel="stylesheet"
+  />
 
-    <link
-      rel="stylesheet"
-      href="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.15/index.global.min.css"
-    />
-  </head>
+  <link
+    rel="stylesheet"
+    href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css"
+  />
 
-  <body>
-    <!-- ==========================
-     NAVBAR
-========================== -->
+  <link
+    rel="stylesheet"
+    href="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.15/index.global.min.css"
+  />
 
-    <header class="navbar">
-      <div class="logo">🏊 Millrod Swim Academy</div>
+  <link
+    rel="stylesheet"
+    href="{{ url_for('static', filename='style.css') }}"
+  />
+</head>
 
-      <nav>
-        <a href="#home"> Home </a>
+<body>
 
-        <a href="#pool"> About </a>
+  <!-- =========================
+       HEADER / NAVIGATION
+  ========================== -->
+  <header class="navbar" id="siteHeader">
+    <div class="nav-container">
 
-        <a href="#about"> Instructor </a>
+      <a href="#home" class="logo" aria-label="Millrod Swim Academy home">
+        <span class="logo-mark">🏊</span>
+        <span class="logo-copy">
+          <strong>Millrod Swim Academy</strong>
+          <small>Professional Swimming Lessons</small>
+        </span>
+      </a>
 
-        <a href="#programs"> Programs </a>
+      <button
+        class="mobile-menu-btn"
+        id="mobileMenuBtn"
+        type="button"
+        aria-label="Open navigation menu"
+        aria-expanded="false"
+        aria-controls="mainNav"
+      >
+        <i class="fa-solid fa-bars"></i>
+      </button>
 
-        <a href="#booking"> Book </a>
+      <nav id="mainNav" class="main-nav" aria-label="Main navigation">
+        <a href="#home">Home</a>
+        <a href="#pool">About</a>
+        <a href="#about">Instructor</a>
+        <a href="#programs">Programs</a>
+        <a href="#booking">Register</a>
+        <a href="#contact">Contact</a>
 
-        <a href="#contact"> Contact </a>
-
-        <a href="/admin/login" class="admin-icon" title="Admin Login"> 🔒 </a>
+        <a href="/admin/login" class="admin-icon" title="Admin Login" aria-label="Admin Login">
+          <i class="fa-solid fa-lock"></i>
+        </a>
       </nav>
-    </header>
 
-    <!-- ==========================
-     HERO
-========================== -->
+    </div>
+  </header>
 
+  <main>
+
+    <!-- =========================
+         HERO
+    ========================== -->
     <section class="hero" id="home">
-      <div class="hero-content">
-        <h1>
-          Build Confidence.<br />
-          Learn Safety.<br />
-          Master Swimming.
-        </h1>
+      <div class="hero-background"></div>
+      <div class="hero-overlay"></div>
 
-        <p>
-          Professional swimming instruction for children and adults of all skill
-          levels. Personalized lessons focused on safety, confidence, and
-          technique.
-        </p>
+      <div class="hero-container">
+        <div class="hero-content">
 
-        <a href="#booking" class="btn"> Schedule Your Lesson </a>
-      </div>
-    </section>
-
-    <!-- ==========================
-     ABOUT POOL
-========================== -->
-
-    <section class="section about-pool" id="pool">
-      <div class="container">
-        <h2>About Millrod Swim Academy</h2>
-
-        <div class="about-content">
-          <div class="about-image">
-            <img
-              src="{{ url_for('static', filename='images/about_pool.jpg') }}"
-              alt="Millrod Swim Academy Pool"
-            />
+          <div class="hero-badge">
+            <i class="fa-solid fa-shield-heart"></i>
+            Safety • Confidence • Skill
           </div>
 
-          <div class="about-text">
-            <p>
-              Welcome to Millrod Swim Academy. We are Noam and Rivka Millrod, a
-              husband-and-wife swim instruction team dedicated to providing
-              professional, high-quality swimming lessons. With more than 30
-              years of combined teaching experience, we have helped hundreds of
-              children and adults develop confidence, improve their swimming
-              abilities, and build lifelong water safety skills.
-            </p>
+          <h1>
+            Build Confidence.
+            <span>Learn Safety.</span>
+            Master Swimming.
+          </h1>
 
-            <p>
-              Our lessons are designed for every level — from beginners learning
-              their first strokes to experienced swimmers looking to improve
-              technique, endurance, and efficiency. Every swimmer receives
-              personalized instruction in a supportive, encouraging environment
-              where safety always comes first.
-            </p>
+          <p class="hero-text">
+            Professional swimming instruction for children and adults
+            of all skill levels. Personalized lessons focused on safety,
+            confidence, technique, and lasting progress.
+          </p>
 
-            <p>
-              Our goal is simple: help every student become a confident, safe,
-              and capable swimmer.
-            </p>
+          <div class="hero-actions">
+            <a href="#booking" class="btn btn-primary">
+              <i class="fa-solid fa-calendar-check"></i>
+              Start Registration
+            </a>
 
-            <div class="instructor-badges">
-              <span> 🌊 Safe Environment </span>
+            <a href="#programs" class="btn btn-secondary">
+              Explore Programs
+              <i class="fa-solid fa-arrow-down"></i>
+            </a>
+          </div>
 
-              <span> 🏊 Professional Training </span>
-
-              <span> ⭐ Personalized Lessons </span>
+          <div class="hero-trust">
+            <div>
+              <i class="fa-solid fa-circle-check"></i>
+              Professional Instruction
+            </div>
+            <div>
+              <i class="fa-solid fa-circle-check"></i>
+              Personalized Lessons
+            </div>
+            <div>
+              <i class="fa-solid fa-circle-check"></i>
+              Safety First
             </div>
           </div>
+
+        </div>
+
+        <div class="hero-card">
+          <div class="hero-card-icon">
+            <i class="fa-solid fa-person-swimming"></i>
+          </div>
+
+          <span>Ready to get started?</span>
+
+          <strong>Request your lesson today.</strong>
+
+          <p>
+            Choose an available date and time, complete your registration,
+            and send your request for academy approval.
+          </p>
+
+          <a href="#booking" class="hero-card-link">
+            Register Now
+            <i class="fa-solid fa-arrow-right"></i>
+          </a>
         </div>
       </div>
     </section>
 
-    <!-- ==========================
-     INSTRUCTOR
-========================== -->
+    <!-- =========================
+         QUICK VALUE STRIP
+    ========================== -->
+    <section class="value-strip" aria-label="Academy benefits">
+      <div class="value-container">
 
-    <section class="section" id="about">
+        <div class="value-item">
+          <span class="value-icon"><i class="fa-solid fa-shield-heart"></i></span>
+          <div>
+            <strong>Safety First</strong>
+            <small>Water safety in every lesson</small>
+          </div>
+        </div>
+
+        <div class="value-item">
+          <span class="value-icon"><i class="fa-solid fa-user-check"></i></span>
+          <div>
+            <strong>Personalized</strong>
+            <small>Instruction based on each swimmer</small>
+          </div>
+        </div>
+
+        <div class="value-item">
+          <span class="value-icon"><i class="fa-solid fa-chart-line"></i></span>
+          <div>
+            <strong>Skill Development</strong>
+            <small>Build technique and confidence</small>
+          </div>
+        </div>
+
+        <div class="value-item">
+          <span class="value-icon"><i class="fa-solid fa-heart"></i></span>
+          <div>
+            <strong>Friendly Approach</strong>
+            <small>A supportive learning environment</small>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- =========================
+         ABOUT POOL
+    ========================== -->
+    <section class="section about-pool" id="pool">
       <div class="container">
-        <h2>Meet Your Swimming Instructor</h2>
+
+        <div class="section-heading">
+          <span class="section-label">About Millrod Swim Academy</span>
+          <h2>Helping Swimmers Become Safer, Stronger & More Confident</h2>
+          <p>
+            Our goal is simple: create a positive swimming experience
+            where every swimmer can learn, improve, and feel confident
+            in the water.
+          </p>
+        </div>
+
+        <div class="about-content">
+
+          <div class="about-image">
+            <img
+              src="{{ url_for('static', filename='images/about_pool.jpg') }}"
+              alt="Millrod Swim Academy pool"
+              loading="lazy"
+            />
+
+            <div class="image-badge">
+              <i class="fa-solid fa-water"></i>
+              <span>
+                <strong>Safety First</strong>
+                <small>Every lesson matters</small>
+              </span>
+            </div>
+          </div>
+
+          <div class="about-text">
+            <span class="mini-label">Why Millrod Swim Academy?</span>
+
+            <h3>Professional instruction with a personal touch.</h3>
+
+            <p>
+              Welcome to Millrod Swim Academy. We are Noam and Rivka Millrod,
+              a husband-and-wife swim instruction team dedicated to providing
+              professional, high-quality swimming lessons.
+            </p>
+
+            <p>
+              With more than 30 years of combined teaching experience, we have
+              helped children and adults develop confidence, improve their
+              swimming abilities, and build lifelong water safety skills.
+            </p>
+
+            <p>
+              Our lessons are designed for every level — from beginners
+              learning their first strokes to experienced swimmers looking
+              to improve technique, endurance, and efficiency.
+            </p>
+
+            <div class="feature-list">
+
+              <div class="feature-item">
+                <span><i class="fa-solid fa-check"></i></span>
+                <div>
+                  <strong>Supportive Instruction</strong>
+                  <p>Encouraging coaching that meets swimmers where they are.</p>
+                </div>
+              </div>
+
+              <div class="feature-item">
+                <span><i class="fa-solid fa-check"></i></span>
+                <div>
+                  <strong>Water Safety</strong>
+                  <p>Safety and confidence are built into the learning process.</p>
+                </div>
+              </div>
+
+              <div class="feature-item">
+                <span><i class="fa-solid fa-check"></i></span>
+                <div>
+                  <strong>Individual Progress</strong>
+                  <p>Lessons focus on meaningful improvement and skill development.</p>
+                </div>
+              </div>
+
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </section>
+
+    <!-- =========================
+         INSTRUCTOR
+    ========================== -->
+    <section class="section instructor-section" id="about">
+      <div class="container">
+
+        <div class="section-heading">
+          <span class="section-label">Meet Your Instructor</span>
+          <h2>Experience, Patience & Professional Instruction</h2>
+          <p>
+            A calm, encouraging approach helps swimmers learn skills
+            while building confidence in the water.
+          </p>
+        </div>
 
         <div class="instructor-profile">
+
           <div class="instructor-image">
             <img
               src="{{ url_for('static', filename='images/instructor.jpg') }}"
-              alt="Certified Swimming Instructor"
+              alt="Millrod Swim Academy certified swimming instructor"
+              loading="lazy"
             />
+
+            <div class="instructor-status">
+              <span class="status-dot"></span>
+              Professional Swimming Instruction
+            </div>
           </div>
 
           <div class="instructor-info">
-            <h3>Certified Swimming Instructor</h3>
+
+            <span class="mini-label">Millrod Swim Academy</span>
+
+            <h3>Certified Swimming Instruction for Every Level</h3>
 
             <p>
               At Millrod Swim Academy, we focus on building strong swimming
@@ -157,279 +343,774 @@
             </p>
 
             <div class="instructor-badges">
-              <span> 🏅 Certified Instructor </span>
-
-              <span> 🌊 Water Safety </span>
-
-              <span> 🏊 Children & Adults </span>
+              <span><i class="fa-solid fa-certificate"></i> Certified Instruction</span>
+              <span><i class="fa-solid fa-shield"></i> Water Safety</span>
+              <span><i class="fa-solid fa-users"></i> Children & Adults</span>
             </div>
+
           </div>
+
         </div>
       </div>
     </section>
 
-    <!-- ==============================
-     PROGRAMS SECTION
-============================== -->
-
-    <section class="section" id="programs">
+    <!-- =========================
+         PROGRAMS
+    ========================== -->
+    <section class="section programs-section" id="programs">
       <div class="container">
-        <h2>Swimming Programs</h2>
+
+        <div class="section-heading">
+          <span class="section-label">Swimming Programs</span>
+          <h2>Choose the Right Lesson for Your Swimmer</h2>
+          <p>
+            From first-time swimmers to advanced athletes,
+            choose an option that fits your goals.
+          </p>
+        </div>
 
         <div class="cards">
-          <div class="card">
-            <h3>🐬 Learn To Swim</h3>
 
-            <p>
-              Perfect for beginners. Students learn water comfort, floating,
-              breathing, kicking, and essential swimming skills.
-            </p>
-          </div>
-
-          <div class="card">
-            <h3>🏊 Stroke Improvement</h3>
-
-            <p>
-              Improve freestyle, backstroke, breathing technique, coordination,
-              and swimming endurance.
-            </p>
-          </div>
-
-          <div class="card">
-            <h3>🏆 Advanced Training</h3>
-
-            <p>
-              Advanced coaching for swimmers who want stronger technique, speed,
-              and confidence.
-            </p>
-          </div>
-        </div>
-      </div>
-    </section>
-
-    <!-- ==============================
-     BOOKING SECTION
-============================== -->
-
-    <section class="section booking-section" id="booking">
-      <div class="container">
-      <!-- REGISTRATION FORM -->
-
-        <div class="form-box">
-          <h3>Swimming Lesson Registration</h3>
-
-          <form id="bookingForm">
-            <!-- STUDENT INFORMATION -->
-
-            <h4>Student Information</h4>
-
-            <label> Student Name </label>
-
-            <input type="text" name="name" required />
-
-            <label> Age </label>
-
-            <input type="number" name="age" required />
-
-            <!-- PARENT INFORMATION -->
-
-            <h4>Parent / Guardian Information</h4>
-
-            <label> Phone </label>
-
-            <input type="tel" name="phone" required />
-
-            <label> Email </label>
-
-            <input type="email" name="email" required />
-
-            <!-- LESSON INFORMATION -->
-
-            <h4>Lesson Details</h4>
-
-            <label> Lesson Type </label>
-
-            <select name="lesson_type" id="lesson_type" required>
-              <option value="">Select Lesson</option>
-
-              <option value="Private Lesson">Private Lesson</option>
-
-              <option value="Semi-Private Lesson">Semi-Private Lesson</option>
-
-              <option value="Group Lesson">Group Lesson</option>
-            </select>
-
-            <label> Package </label>
-
-            <select name="package" id="package" required>
-              <option value="Single Lesson">Single Lesson</option>
-
-              <option value="4 Lessons Package">4 Lessons Package</option>
-
-              <option value="8 Lessons Package">8 Lessons Package</option>
-
-              <option value="Monthly Program">Monthly Program</option>
-            </select>
-
-            <h3 id="priceDisplay">Price: Select Lesson</h3>
-
-            <!-- SCHEDULE -->
-
-            <h4>Schedule</h4>
-
-            <label> Date </label>
-
-            <input type="date" id="lesson_date" name="date" required />
-
-            <label> Time </label>
-
-            <select id="lesson_time" name="time" required>
-              <option value="">Select Time</option>
-
-              <option value="9:00 AM">9:00 AM</option>
-
-              <option value="10:00 AM">10:00 AM</option>
-
-              <option value="11:00 AM">11:00 AM</option>
-
-              <option value="12:00 PM">12:00 PM</option>
-
-              <option value="1:00 PM">1:00 PM</option>
-
-              <option value="2:00 PM">2:00 PM</option>
-
-              <option value="3:00 PM">3:00 PM</option>
-
-              <option value="4:00 PM">4:00 PM</option>
-            </select>
-
-            <!-- ADDITIONAL INFORMATION -->
-
-            <h4>Additional Information</h4>
-
-            <textarea
-              name="medical"
-              placeholder="Medical conditions or allergies"
-            ></textarea>
-
-            <textarea
-              name="notes"
-              placeholder="Additional notes or requests"
-            ></textarea>
-
-            <label class="checkbox">
-              <input type="checkbox" required />
-
-              I confirm that the information provided is correct.
-            </label>
-
-            <!-- PAYMENT BUTTONS -->
-
-            <div class="booking-buttons">
-              <button type="button" id="sendApprovalBtn" class="btn">
-                Send for approval
-              </button>
+          <article class="card program-card">
+            <div class="program-card-top">
+              <span class="program-icon">
+                <i class="fa-solid fa-water"></i>
+              </span>
+              <span class="program-number">01</span>
             </div>
 
-            <div id="bookingMessage"></div>
-          </form>
-        </div>
-      </div>
-    </section>
+            <h3>Learn to Swim</h3>
 
-    <!-- ==============================
-     CONTACT SECTION
-============================== -->
+            <p>
+              Perfect for beginners. Students learn water comfort,
+              floating, breathing, kicking, and essential swimming skills.
+            </p>
 
-    <!-- ==============================
-     CONTACT SECTION
-============================== -->
+            <ul>
+              <li><i class="fa-solid fa-check"></i> Water comfort</li>
+              <li><i class="fa-solid fa-check"></i> Floating & breathing</li>
+              <li><i class="fa-solid fa-check"></i> Essential swimming skills</li>
+            </ul>
 
-    <section class="section contact-section" id="contact">
-      <div class="container">
-        <h2>Contact Millrod Swim Academy</h2>
-
-        <p class="contact-intro">
-          Have questions about lessons, schedules, or programs? We are happy to
-          help you find the perfect swimming experience.
-        </p>
-
-        <div class="contact-grid">
-          <div class="contact-card">
-            <div class="contact-icon">📧</div>
-
-            <h3>Email Us</h3>
-
-            <p>Send us your questions and we will get back to you.</p>
-
-            <a href="mailto:themillrodswim@gmail.com">
-              themillrodswim@gmail.com
+            <a href="#booking" class="card-link">
+              Request a Lesson <i class="fa-solid fa-arrow-right"></i>
             </a>
-          </div>
+          </article>
 
-          <div class="contact-card">
-            <div class="contact-icon">🏊</div>
+          <article class="card program-card featured">
+            <div class="featured-label">Popular</div>
 
-            <h3>Swimming Lessons</h3>
+            <div class="program-card-top">
+              <span class="program-icon">
+                <i class="fa-solid fa-person-swimming"></i>
+              </span>
+              <span class="program-number">02</span>
+            </div>
 
-            <p>
-              Private lessons, group programs, beginner training, and advanced
-              swimming development.
-            </p>
-
-            <a href="#booking"> Schedule A Lesson </a>
-          </div>
-
-          <div class="contact-card">
-            <div class="contact-icon">🌊</div>
-
-            <h3>Our Mission</h3>
+            <h3>Stroke Improvement</h3>
 
             <p>
-              Helping swimmers build confidence, improve skills, and stay safe
-              in the water.
+              Improve freestyle, backstroke, breathing technique,
+              coordination, body position, and swimming endurance.
             </p>
+
+            <ul>
+              <li><i class="fa-solid fa-check"></i> Stroke technique</li>
+              <li><i class="fa-solid fa-check"></i> Breathing & coordination</li>
+              <li><i class="fa-solid fa-check"></i> Endurance development</li>
+            </ul>
+
+            <a href="#booking" class="card-link">
+              Request a Lesson <i class="fa-solid fa-arrow-right"></i>
+            </a>
+          </article>
+
+          <article class="card program-card">
+            <div class="program-card-top">
+              <span class="program-icon">
+                <i class="fa-solid fa-trophy"></i>
+              </span>
+              <span class="program-number">03</span>
+            </div>
+
+            <h3>Advanced Training</h3>
+
+            <p>
+              Advanced coaching for swimmers who want stronger
+              technique, speed, efficiency, and confidence.
+            </p>
+
+            <ul>
+              <li><i class="fa-solid fa-check"></i> Advanced technique</li>
+              <li><i class="fa-solid fa-check"></i> Speed & efficiency</li>
+              <li><i class="fa-solid fa-check"></i> Performance development</li>
+            </ul>
+
+            <a href="#booking" class="card-link">
+              Request a Lesson <i class="fa-solid fa-arrow-right"></i>
+            </a>
+          </article>
+
+        </div>
+      </div>
+    </section>
+
+    <!-- =========================
+         REGISTRATION / BOOKING
+    ========================== -->
+    <section class="section booking-section" id="booking">
+      <div class="container">
+
+        <div class="section-heading">
+          <span class="section-label">Lesson Registration</span>
+          <h2>Request Your Swimming Lesson</h2>
+          <p>
+            Choose a date and available time, complete the registration,
+            and send your request to the academy for approval.
+          </p>
+        </div>
+
+        <!-- Registration Process -->
+        <div class="registration-process">
+
+          <div class="process-step active">
+            <span>1</span>
+            <div>
+              <strong>Choose a Time</strong>
+              <small>Select an available date and time.</small>
+            </div>
+          </div>
+
+          <div class="process-line"></div>
+
+          <div class="process-step">
+            <span>2</span>
+            <div>
+              <strong>Send for Approval</strong>
+              <small>We review your registration.</small>
+            </div>
+          </div>
+
+          <div class="process-line"></div>
+
+          <div class="process-step">
+            <span>3</span>
+            <div>
+              <strong>Complete Registration</strong>
+              <small>Pay now or choose Pay Later after approval.</small>
+            </div>
+          </div>
+
+        </div>
+
+        <div class="booking-layout">
+
+          <!-- =========================
+               CALENDAR PANEL
+          ========================== -->
+          <div class="booking-panel calendar-panel">
+
+            <div class="panel-header">
+              <div>
+                <span class="panel-step">Step 1</span>
+                <h3>Choose Your Date</h3>
+                <p>
+                  Select an available date from the calendar.
+                </p>
+              </div>
+
+              <div class="availability-badge">
+                <span class="status-dot"></span>
+                Live Availability
+              </div>
+            </div>
+
+            <div
+              id="calendar"
+              class="calendar-container"
+              aria-label="Swimming lesson availability calendar"
+            ></div>
+
+            <div class="calendar-legend">
+              <span>
+                <i class="legend-dot available"></i>
+                Available
+              </span>
+              <span>
+                <i class="legend-dot selected"></i>
+                Selected
+              </span>
+              <span>
+                <i class="legend-dot booked"></i>
+                Reserved
+              </span>
+            </div>
+
+            <div class="calendar-help">
+              <i class="fa-solid fa-circle-info"></i>
+              <span>
+                Select a date first. Available lesson times will appear
+                in the registration form.
+              </span>
+            </div>
+
+          </div>
+
+          <!-- =========================
+               FORM PANEL
+          ========================== -->
+          <div class="booking-panel form-panel">
+
+            <div class="panel-header">
+              <div>
+                <span class="panel-step">Step 2</span>
+                <h3>Registration Information</h3>
+                <p>
+                  Tell us about the swimmer and preferred lesson.
+                </p>
+              </div>
+            </div>
+
+            <form id="bookingForm" novalidate>
+
+              <!-- Student -->
+              <div class="form-section">
+                <div class="form-section-title">
+                  <span><i class="fa-solid fa-user"></i></span>
+                  <div>
+                    <h4>Student Information</h4>
+                    <p>Information about the swimmer.</p>
+                  </div>
+                </div>
+
+                <div class="form-grid">
+
+                  <div class="form-group full-width">
+                    <label for="student_name">
+                      Student Full Name <span>*</span>
+                    </label>
+                    <input
+                      type="text"
+                      id="student_name"
+                      name="student_name"
+                      placeholder="Enter student's full name"
+                      autocomplete="name"
+                      required
+                    />
+                  </div>
+
+                  <div class="form-group">
+                    <label for="dob">
+                      Date of Birth <span>*</span>
+                    </label>
+                    <input
+                      type="date"
+                      id="dob"
+                      name="dob"
+                      required
+                    />
+                  </div>
+
+                  <div class="form-group">
+                    <label for="age">
+                      Age <span>*</span>
+                    </label>
+                    <input
+                      type="number"
+                      id="age"
+                      name="age"
+                      min="1"
+                      max="120"
+                      placeholder="Age"
+                      required
+                    />
+                  </div>
+
+                </div>
+              </div>
+
+              <!-- Parent -->
+              <div class="form-section">
+                <div class="form-section-title">
+                  <span><i class="fa-solid fa-users"></i></span>
+                  <div>
+                    <h4>Parent / Guardian Information</h4>
+                    <p>How we will contact you about the registration.</p>
+                  </div>
+                </div>
+
+                <div class="form-grid">
+
+                  <div class="form-group full-width">
+                    <label for="parent_name">
+                      Parent / Guardian Name <span>*</span>
+                    </label>
+                    <input
+                      type="text"
+                      id="parent_name"
+                      name="parent_name"
+                      placeholder="Parent or guardian full name"
+                      required
+                    />
+                  </div>
+
+                  <div class="form-group">
+                    <label for="email">
+                      Email Address <span>*</span>
+                    </label>
+                    <input
+                      type="email"
+                      id="email"
+                      name="email"
+                      placeholder="you@example.com"
+                      autocomplete="email"
+                      required
+                    />
+                  </div>
+
+                  <div class="form-group">
+                    <label for="phone">
+                      Phone Number <span>*</span>
+                    </label>
+                    <input
+                      type="tel"
+                      id="phone"
+                      name="phone"
+                      placeholder="(555) 555-5555"
+                      autocomplete="tel"
+                      required
+                    />
+                  </div>
+
+                </div>
+              </div>
+
+              <!-- Emergency -->
+              <div class="form-section">
+                <div class="form-section-title">
+                  <span><i class="fa-solid fa-phone-volume"></i></span>
+                  <div>
+                    <h4>Emergency Contact</h4>
+                    <p>Please provide a contact we can reach if needed.</p>
+                  </div>
+                </div>
+
+                <div class="form-grid">
+
+                  <div class="form-group">
+                    <label for="emergency_contact">
+                      Emergency Contact <span>*</span>
+                    </label>
+                    <input
+                      type="text"
+                      id="emergency_contact"
+                      name="emergency_contact"
+                      placeholder="Full name"
+                      required
+                    />
+                  </div>
+
+                  <div class="form-group">
+                    <label for="emergency_phone">
+                      Emergency Phone <span>*</span>
+                    </label>
+                    <input
+                      type="tel"
+                      id="emergency_phone"
+                      name="emergency_phone"
+                      placeholder="(555) 555-5555"
+                      required
+                    />
+                  </div>
+
+                </div>
+              </div>
+
+              <!-- Experience -->
+              <div class="form-section">
+                <div class="form-section-title">
+                  <span><i class="fa-solid fa-water"></i></span>
+                  <div>
+                    <h4>Swimming Experience</h4>
+                    <p>Help us understand the swimmer's current level.</p>
+                  </div>
+                </div>
+
+                <div class="form-group">
+                  <label for="swimming_experience">
+                    Swimming Experience <span>*</span>
+                  </label>
+                  <textarea
+                    id="swimming_experience"
+                    name="swimming_experience"
+                    rows="4"
+                    placeholder="Tell us about the swimmer's experience, current skill level, and anything you would like the instructor to know."
+                    required
+                  ></textarea>
+                </div>
+              </div>
+
+              <!-- Lesson -->
+              <div class="form-section">
+                <div class="form-section-title">
+                  <span><i class="fa-solid fa-person-swimming"></i></span>
+                  <div>
+                    <h4>Lesson Selection</h4>
+                    <p>Choose your lesson type and package.</p>
+                  </div>
+                </div>
+
+                <div class="form-grid">
+
+                  <div class="form-group">
+                    <label for="lesson_type">
+                      Lesson Type <span>*</span>
+                    </label>
+                    <select id="lesson_type" name="lesson_type" required>
+                      <option value="">Select Lesson Type</option>
+                      <option value="Private Lesson">Private Lesson</option>
+                      <option value="Semi-Private Lesson">Semi-Private Lesson</option>
+                      <option value="Group Lesson">Group Lesson</option>
+                    </select>
+                  </div>
+
+                  <div class="form-group">
+                    <label for="package">
+                      Package <span>*</span>
+                    </label>
+                    <select id="package" name="package" required>
+                      <option value="">Select Package</option>
+                      <option value="Single Lesson">Single Lesson</option>
+                      <option value="4 Lessons Package">4 Lessons Package</option>
+                      <option value="8 Lessons Package">8 Lessons Package</option>
+                      <option value="Monthly Program">Monthly Program</option>
+                    </select>
+                  </div>
+
+                </div>
+
+                <div class="price-preview" id="pricePreview">
+                  <div class="price-icon">
+                    <i class="fa-solid fa-tag"></i>
+                  </div>
+
+                  <div>
+                    <span>Lesson Price</span>
+                    <strong id="priceDisplay">Select a lesson and package</strong>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Schedule -->
+              <div class="form-section">
+                <div class="form-section-title">
+                  <span><i class="fa-solid fa-calendar-days"></i></span>
+                  <div>
+                    <h4>Lesson Schedule</h4>
+                    <p>Your selected calendar date will appear here.</p>
+                  </div>
+                </div>
+
+                <div class="form-grid">
+
+                  <div class="form-group">
+                    <label for="lesson_date">
+                      Selected Date <span>*</span>
+                    </label>
+                    <input
+                      type="date"
+                      id="lesson_date"
+                      name="lesson_date"
+                      readonly
+                      required
+                    />
+                  </div>
+
+                  <div class="form-group">
+                    <label for="lesson_time">
+                      Available Time <span>*</span>
+                    </label>
+                    <select
+                      id="lesson_time"
+                      name="lesson_time"
+                      required
+                    >
+                      <option value="">Select a date first</option>
+                    </select>
+                  </div>
+
+                </div>
+              </div>
+
+              <!-- Extra information -->
+              <div class="form-section">
+                <div class="form-section-title">
+                  <span><i class="fa-solid fa-note-sticky"></i></span>
+                  <div>
+                    <h4>Additional Information</h4>
+                    <p>Anything else you'd like us to know?</p>
+                  </div>
+                </div>
+
+                <div class="form-group">
+                  <label for="medical">
+                    Medical Conditions / Allergies
+                  </label>
+                  <textarea
+                    id="medical"
+                    name="medical"
+                    rows="3"
+                    placeholder="Optional — please tell us about any relevant medical conditions or allergies."
+                  ></textarea>
+                </div>
+
+                <div class="form-group">
+                  <label for="notes">
+                    Additional Notes
+                  </label>
+                  <textarea
+                    id="notes"
+                    name="notes"
+                    rows="3"
+                    placeholder="Optional — special requests, goals, or other information."
+                  ></textarea>
+                </div>
+              </div>
+
+              <!-- Workflow notice -->
+              <div class="approval-notice">
+                <div class="approval-notice-icon">
+                  <i class="fa-solid fa-paper-plane"></i>
+                </div>
+
+                <div>
+                  <strong>What happens after you submit?</strong>
+                  <p>
+                    Your registration will be sent to Millrod Swim Academy
+                    for review. Submitting this form does not immediately
+                    charge you or require payment.
+                  </p>
+                  <p>
+                    If approved, you will receive an email with secure
+                    <strong>Pay Now</strong> and <strong>Pay Later</strong>
+                    options.
+                  </p>
+                </div>
+              </div>
+
+              <!-- Agreement -->
+              <label class="checkbox-row">
+                <input type="checkbox" id="registrationAgreement" required />
+                <span>
+                  I confirm that the information provided is accurate
+                  and I would like to submit this registration for review.
+                </span>
+              </label>
+
+              <!-- Message -->
+              <div
+                id="bookingMessage"
+                class="booking-message"
+                role="alert"
+                aria-live="polite"
+              ></div>
+
+              <!-- Submit -->
+              <button
+                type="submit"
+                id="sendApprovalBtn"
+                class="submit-booking-btn"
+              >
+                <span class="button-text">
+                  <i class="fa-solid fa-paper-plane"></i>
+                  Send Registration for Approval
+                </span>
+
+                <span class="button-loading" hidden>
+                  <i class="fa-solid fa-spinner fa-spin"></i>
+                  Sending Registration...
+                </span>
+              </button>
+
+              <div class="secure-note">
+                <i class="fa-solid fa-lock"></i>
+                <span>Your information is securely submitted for registration review.</span>
+              </div>
+
+            </form>
           </div>
         </div>
       </div>
     </section>
 
-    <!-- ==============================
-     FOOTER
-============================== -->
+    <!-- =========================
+         SUCCESS MODAL
+    ========================== -->
+    <div
+      id="successModal"
+      class="modal"
+      aria-hidden="true"
+    >
+      <div class="modal-overlay" data-close-modal></div>
 
-    <footer class="footer">
-      <div class="footer-container">
-        <h3>🏊 Millrod Swim Academy</h3>
+      <div
+        class="modal-card"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="successTitle"
+      >
+        <button
+          type="button"
+          class="modal-close"
+          id="closeSuccessModal"
+          aria-label="Close confirmation"
+        >
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+
+        <div class="success-icon">
+          <i class="fa-solid fa-check"></i>
+        </div>
+
+        <span class="section-label">Registration Submitted</span>
+
+        <h2 id="successTitle">You're All Set!</h2>
 
         <p>
-          Professional Swimming Lessons
-          <br />
-          Safety • Confidence • Skill Development
+          Your swimming lesson request has been successfully sent
+          to Millrod Swim Academy for review.
         </p>
 
-        <div class="footer-links">
-          <a href="#home"> Home </a>
+        <div class="success-highlight">
+          <strong>What happens next?</strong>
 
-          <a href="#programs"> Programs </a>
-
-          <a href="#booking"> Book A Lesson </a>
-
-          <a href="#contact"> Contact </a>
+          <ol>
+            <li>Our team reviews your registration.</li>
+            <li>You receive an email with the approval decision.</li>
+            <li>
+              If approved, your email will include
+              <strong>Pay Now</strong> and <strong>Pay Later</strong>.
+            </li>
+          </ol>
         </div>
+
+        <p class="success-small">
+          Please check your email for updates from Millrod Swim Academy.
+        </p>
+
+        <button
+          type="button"
+          class="btn btn-primary modal-done-btn"
+          id="successDoneBtn"
+        >
+          Done
+        </button>
+      </div>
+    </div>
+
+    <!-- =========================
+         CONTACT
+    ========================== -->
+    <section class="section contact-section" id="contact">
+      <div class="container">
+
+        <div class="section-heading">
+          <span class="section-label">Contact Us</span>
+          <h2>Questions About Swimming Lessons?</h2>
+          <p>
+            We're happy to help you find the right swimming experience
+            for you or your swimmer.
+          </p>
+        </div>
+
+        <div class="contact-grid">
+
+          <a
+            href="mailto:themillrodswim@gmail.com"
+            class="contact-card"
+          >
+            <div class="contact-icon">
+              <i class="fa-solid fa-envelope"></i>
+            </div>
+
+            <div>
+              <span>Email Us</span>
+              <strong>themillrodswim@gmail.com</strong>
+              <small>Send us your questions</small>
+            </div>
+          </a>
+
+          <a href="#programs" class="contact-card">
+            <div class="contact-icon">
+              <i class="fa-solid fa-person-swimming"></i>
+            </div>
+
+            <div>
+              <span>Programs</span>
+              <strong>Explore Swimming Lessons</strong>
+              <small>Find the right option for you</small>
+            </div>
+          </a>
+
+          <a href="#booking" class="contact-card">
+            <div class="contact-icon">
+              <i class="fa-solid fa-calendar-check"></i>
+            </div>
+
+            <div>
+              <span>Ready?</span>
+              <strong>Start Your Registration</strong>
+              <small>Request an available lesson time</small>
+            </div>
+          </a>
+
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- =========================
+       FOOTER
+  ========================== -->
+  <footer class="footer">
+    <div class="footer-container">
+
+      <div class="footer-brand">
+        <div class="footer-logo">🏊</div>
+        <div>
+          <h3>Millrod Swim Academy</h3>
+          <p>Professional Swimming Lessons</p>
+        </div>
+      </div>
+
+      <div class="footer-links">
+        <a href="#home">Home</a>
+        <a href="#pool">About</a>
+        <a href="#programs">Programs</a>
+        <a href="#booking">Register</a>
+        <a href="#contact">Contact</a>
+      </div>
+
+      <div class="footer-bottom">
+        <p>
+          Safety • Confidence • Skill Development
+        </p>
 
         <p class="copyright">
           © 2026 Millrod Swim Academy. All Rights Reserved.
         </p>
       </div>
-    </footer>
 
-    <!-- ==============================
-     JAVASCRIPT
-============================== -->
+    </div>
+  </footer>
 
-    <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.15/index.global.min.js"></script>
+  <!-- =========================
+       SCRIPTS
+  ========================== -->
+  <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.15/index.global.min.js"></script>
 
-    <script src="{{ url_for('static', filename='script.js') }}"></script>
-  </body>
+  <script src="{{ url_for('static', filename='script.js') }}"></script>
+
+</body>
 </html>

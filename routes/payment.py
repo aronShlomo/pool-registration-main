@@ -1,8 +1,17 @@
-from flask import Blueprint, request, jsonify, redirect
 import stripe
+
+from flask import (
+    Blueprint,
+    jsonify,
+    redirect,
+    request,
+    render_template
+)
 
 from config import Config
 from database import get_db_connection
+
+import psycopg2.extras
 
 from email_service import (
     send_booking_confirmation,
@@ -10,421 +19,544 @@ from email_service import (
 )
 
 
+# ============================================================
+# BLUEPRINT
+# ============================================================
+
 payment_bp = Blueprint(
     "payment",
     __name__
 )
 
 
+# ============================================================
+# STRIPE CONFIGURATION
+# ============================================================
+
 stripe.api_key = Config.STRIPE_SECRET_KEY
 
 
+# ============================================================
+# HELPERS
+# ============================================================
 
-# =====================================
-# CREATE STRIPE CHECKOUT
-# =====================================
+def get_booking(booking_id):
+    """
+    Retrieve one booking from PostgreSQL.
+    """
 
-@payment_bp.route(
-    "/create-checkout-session",
-    methods=["POST"]
-)
-def create_checkout_session():
-
+    conn = None
 
     try:
 
-        data = request.get_json()
-
-
-        if not data:
-
-            return jsonify({
-                "error": "No JSON received"
-            }), 400
-
-
-
-        booking_id = data.get("booking_id")
-
-
-        if not booking_id:
-
-            return jsonify({
-                "error": "Booking ID missing"
-            }), 400
-
-
-
         conn = get_db_connection()
 
-        cursor = conn.cursor()
-
+        cursor = conn.cursor(
+            cursor_factory=psycopg2.extras.RealDictCursor
+        )
 
         cursor.execute(
             """
             SELECT *
             FROM bookings
-            WHERE id=?
+            WHERE id = %s
+            LIMIT 1
             """,
             (booking_id,)
         )
 
+        return cursor.fetchone()
 
-        booking = cursor.fetchone()
+    finally:
+
+        if conn:
+            conn.close()
 
 
-        conn.close()
+def get_price_in_cents(booking):
+    """
+    Get the official price from Config.
+
+    The customer's browser is never trusted for payment amount.
+    """
+
+    lesson_type = booking["lesson_type"]
+
+    package = booking["package"]
+
+    try:
+
+        return Config.LESSON_PRICES[
+            lesson_type
+        ][
+            package
+        ]
+
+    except KeyError:
+
+        return None
 
 
+# ============================================================
+# PAY NOW
+# ============================================================
+
+@payment_bp.route(
+    "/api/pay-now/<int:booking_id>",
+    methods=["GET"]
+)
+def pay_now(booking_id):
+
+    try:
+
+        # ----------------------------------------------------
+        # GET BOOKING
+        # ----------------------------------------------------
+
+        booking = get_booking(
+            booking_id
+        )
 
         if not booking:
 
-            return jsonify({
-                "error": "Booking not found"
-            }), 404
+            return (
+                "<h2>Registration Not Found</h2>"
+                "<p>We could not find this registration.</p>"
+            ), 404
 
 
+        # ----------------------------------------------------
+        # CHECK APPROVAL
+        # ----------------------------------------------------
 
-        price = Config.LESSON_PRICES[
-            booking["lesson_type"]
-        ][
-            booking["package"]
-        ]
+        if booking["status"] != "confirmed":
+
+            return (
+                "<div style='"
+                "font-family:Arial,sans-serif;"
+                "max-width:600px;"
+                "margin:60px auto;"
+                "padding:40px;"
+                "text-align:center;"
+                "'>"
+                "<h2>Registration Not Yet Approved</h2>"
+                "<p>"
+                "Your registration must be approved "
+                "before payment can be completed."
+                "</p>"
+                "</div>"
+            ), 400
 
 
+        # ----------------------------------------------------
+        # ALREADY PAID
+        # ----------------------------------------------------
 
-        session = stripe.checkout.Session.create(
+        if booking["payment_status"] == "paid":
+
+            return (
+                "<div style='"
+                "font-family:Arial,sans-serif;"
+                "max-width:600px;"
+                "margin:60px auto;"
+                "padding:40px;"
+                "text-align:center;"
+                "'>"
+                "<div style='font-size:55px;'>✔</div>"
+                "<h2>Payment Already Completed</h2>"
+                "<p>"
+                "This registration has already been paid."
+                "</p>"
+                "</div>"
+            )
+
+
+        # ----------------------------------------------------
+        # STRIPE KEY CHECK
+        # ----------------------------------------------------
+
+        if not Config.STRIPE_SECRET_KEY:
+
+            print(
+                "STRIPE ERROR: "
+                "STRIPE_SECRET_KEY is missing."
+            )
+
+            return (
+                "<h2>Payment Temporarily Unavailable</h2>"
+                "<p>Please contact Millrod Swim Academy.</p>"
+            ), 500
+
+
+        # ----------------------------------------------------
+        # OFFICIAL SERVER PRICE
+        # ----------------------------------------------------
+
+        price_cents = get_price_in_cents(
+            booking
+        )
+
+        if price_cents is None:
+
+            return (
+                "<h2>Payment Error</h2>"
+                "<p>"
+                "We could not determine the registration price."
+                "</p>"
+            ), 400
+
+
+        # ----------------------------------------------------
+        # UPDATE STORED PRICE
+        # ----------------------------------------------------
+
+        price_display = (
+            f"${price_cents / 100:.2f}"
+        )
+
+        conn = None
+
+        try:
+
+            conn = get_db_connection()
+
+            cursor = conn.cursor()
+
+            cursor.execute(
+                """
+                UPDATE bookings
+                SET price = %s
+                WHERE id = %s
+                """,
+                (
+                    price_display,
+                    booking_id
+                )
+            )
+
+            conn.commit()
+
+        finally:
+
+            if conn:
+                conn.close()
+
+
+        # ----------------------------------------------------
+        # CREATE STRIPE CHECKOUT SESSION
+        # ----------------------------------------------------
+
+        checkout_session = stripe.checkout.Session.create(
+
+            mode="payment",
 
             payment_method_types=[
                 "card"
             ],
 
-            mode="payment",
-
-
-            customer_email=booking["email"],
-
-
             line_items=[
 
                 {
-
                     "price_data": {
 
-                        "currency":
-                            Config.CURRENCY,
-
+                        "currency": Config.CURRENCY,
 
                         "product_data": {
 
-                            "name":
-                            f"{booking['lesson_type']} - {booking['package']}"
+                            "name": (
+                                f"{booking['lesson_type']} "
+                                f"- "
+                                f"{booking['package']}"
+                            ),
 
+                            "description": (
+                                f"Lesson date: "
+                                f"{booking['lesson_date']} "
+                                f"at "
+                                f"{booking['lesson_time']}"
+                            )
                         },
 
-
-                        "unit_amount":
-                            price
-
+                        "unit_amount": price_cents
                     },
 
-
                     "quantity": 1
-
                 }
-
             ],
-
 
             metadata={
 
-                "booking_id":
-                    str(booking_id)
-
+                "booking_id": str(
+                    booking_id
+                )
             },
 
+            customer_email=booking["email"],
 
-            success_url=
-                f"{Config.DOMAIN}/payment-success?session_id={{CHECKOUT_SESSION_ID}}",
+            success_url=(
+                f"{Config.DOMAIN}"
+                f"/payment-success"
+                f"?session_id={{CHECKOUT_SESSION_ID}}"
+            ),
 
-
-            cancel_url=
-                f"{Config.DOMAIN}/payment-cancel"
-
+            cancel_url=(
+                f"{Config.DOMAIN}"
+                f"/payment-cancel"
+            )
         )
 
 
+        # ----------------------------------------------------
+        # REDIRECT TO STRIPE
+        # ----------------------------------------------------
 
-        return jsonify({
-
-            "checkout_url":
-                session.url
-
-        })
+        return redirect(
+            checkout_session.url
+        )
 
 
-
-    except Exception as e:
-
+    except stripe.error.StripeError as error:
 
         print(
-            "STRIPE ERROR:",
-            e
+            "STRIPE CHECKOUT ERROR:",
+            repr(error)
         )
 
+        return (
+            "<div style='"
+            "font-family:Arial,sans-serif;"
+            "max-width:600px;"
+            "margin:60px auto;"
+            "padding:40px;"
+            "text-align:center;"
+            "'>"
+            "<h2>Payment Could Not Be Started</h2>"
+            "<p>"
+            "We were unable to start your secure payment."
+            "</p>"
+            "<p>"
+            "Please try again or contact Millrod Swim Academy."
+            "</p>"
+            "</div>"
+        ), 500
 
-        return jsonify({
 
-            "error":
-                str(e)
+    except Exception as error:
 
-        }),500
-
-
-
-
-
-# =====================================
-# PAYMENT ACTIONS (PAY NOW / PAY LATER)
-# =====================================
-
-@payment_bp.route("/pay-now/<int:booking_id>")
-def pay_now(booking_id):
-    try:
-        conn = get_db_connection()
-        cursor = conn.cursor()
-        cursor.execute(
-            """
-            SELECT *
-            FROM bookings
-            WHERE id=?
-            """,
-            (booking_id,)
-        )
-        booking = cursor.fetchone()
-        conn.close()
-
-        if not booking:
-            return "Booking not found", 404
-
-        price = Config.LESSON_PRICES[booking["lesson_type"]][booking["package"]]
-
-        session = stripe.checkout.Session.create(
-            payment_method_types=["card"],
-            mode="payment",
-            customer_email=booking["email"],
-            line_items=[
-                {
-                    "price_data": {
-                        "currency": Config.CURRENCY,
-                        "product_data": {
-                            "name": f"{booking['lesson_type']} - {booking['package']}"
-                        },
-                        "unit_amount": price
-                    },
-                    "quantity": 1
-                }
-            ],
-            metadata={"booking_id": str(booking_id)},
-            success_url=f"{Config.DOMAIN}/payment-success?session_id={{CHECKOUT_SESSION_ID}}",
-            cancel_url=f"{Config.DOMAIN}/payment-cancel"
+        print(
+            "PAY NOW ERROR:",
+            repr(error)
         )
 
-        return redirect(session.url)
+        return (
+            "<h2>Payment Error</h2>"
+            "<p>"
+            "Something went wrong while starting payment."
+            "</p>"
+        ), 500
 
-    except Exception as e:
-        print("PAY NOW ERROR:", e)
-        return "Payment initiation error", 500
 
+# ============================================================
+# PAY LATER
+# ============================================================
 
-@payment_bp.route("/pay-later/<int:booking_id>")
+@payment_bp.route(
+    "/api/pay-later/<int:booking_id>",
+    methods=["GET"]
+)
 def pay_later(booking_id):
+
+    conn = None
+
     try:
+
         conn = get_db_connection()
-        cursor = conn.cursor()
+
+        cursor = conn.cursor(
+            cursor_factory=psycopg2.extras.RealDictCursor
+        )
+
+
+        # ----------------------------------------------------
+        # GET BOOKING
+        # ----------------------------------------------------
+
         cursor.execute(
             """
             SELECT *
             FROM bookings
-            WHERE id=?
+            WHERE id = %s
+            LIMIT 1
             """,
             (booking_id,)
         )
+
+
         booking = cursor.fetchone()
 
-        if not booking:
-            conn.close()
-            return "Booking not found", 404
 
-        # Mark booking as confirmed but payment pending (owner already approved)
+        if not booking:
+
+            return (
+                "<h2>Registration Not Found</h2>"
+                "<p>"
+                "We could not find this registration."
+                "</p>"
+            ), 404
+
+
+        # ----------------------------------------------------
+        # CHECK APPROVAL
+        # ----------------------------------------------------
+
+        if booking["status"] != "confirmed":
+
+            return (
+                "<h2>Registration Not Yet Approved</h2>"
+                "<p>"
+                "Your registration must be approved "
+                "before selecting Pay Later."
+                "</p>"
+            ), 400
+
+
+        # ----------------------------------------------------
+        # ALREADY PAID
+        # ----------------------------------------------------
+
+        if booking["payment_status"] == "paid":
+
+            conn.close()
+
+            return (
+                "<h2>Payment Already Completed</h2>"
+                "<p>"
+                "This registration has already been paid."
+                "</p>"
+            )
+
+
+        # ----------------------------------------------------
+        # UPDATE PAYMENT METHOD
+        # ----------------------------------------------------
+
         cursor.execute(
             """
             UPDATE bookings
-            SET status='confirmed', payment_status='pending', payment_method='cash_or_zelle'
-            WHERE id=?
+            SET
+                payment_method = %s,
+                payment_status = %s,
+                status = %s
+            WHERE id = %s
+            RETURNING *
             """,
-            (booking_id,)
+            (
+                "cash_or_zelle",
+                "pending",
+                "confirmed",
+                booking_id
+            )
         )
+
+
+        booking = cursor.fetchone()
+
         conn.commit()
 
-        # Refresh booking data
-        cursor.execute(
-            """
-            SELECT *
-            FROM bookings
-            WHERE id=?
-            """,
-            (booking_id,)
-        )
-        booking = cursor.fetchone()
         conn.close()
 
-        # Send confirmation email to customer
-        send_booking_confirmation(
-            booking["email"],
-            booking["name"],
-            booking["lesson_type"],
-            booking["package"],
-            booking["lesson_date"],
-            booking["lesson_time"] ,
-            booking.get("payment_status", "pending"),
-            booking.get("price", "")
-        )
-
-        return f"<h1>Payment deferred</h1><p>Your booking is confirmed and you can pay on arrival.</p><a href=\"/\">Home</a>"
-
-    except Exception as e:
-        print("PAY LATER ERROR:", e)
-        return "Error processing pay-later", 500
+        conn = None
 
 
-# =====================================
-# TEST PAYMENT SUCCESS
-# =====================================
+        # ----------------------------------------------------
+        # SEND CUSTOMER CONFIRMATION
+        # ----------------------------------------------------
 
-@payment_bp.route(
-    "/test-payment-success/<int:booking_id>"
-)
-def test_payment_success(booking_id):
+        try:
 
+            send_booking_confirmation(
+                customer_email=booking["email"],
+                customer_name=booking["name"],
+                lesson_type=booking["lesson_type"],
+                package=booking["package"],
+                lesson_date=booking["lesson_date"],
+                lesson_time=booking["lesson_time"],
+                payment_status=booking["payment_status"],
+                price=booking["price"]
+            )
 
-    conn = get_db_connection()
+        except Exception as email_error:
 
-    cursor = conn.cursor()
-
-
-    cursor.execute(
-        """
-        UPDATE bookings
-
-        SET
-
-        payment_method='card',
-
-        payment_status='paid',
-
-        status='confirmed',
-
-        stripe_payment_id='TEST_PAYMENT'
-
-        WHERE id=?
-
-        """,
-        (
-            booking_id,
-        )
-    )
+            print(
+                "PAY LATER CUSTOMER EMAIL ERROR:",
+                repr(email_error)
+            )
 
 
-    conn.commit()
+        # ----------------------------------------------------
+        # NOTIFY OWNER
+        # ----------------------------------------------------
+
+        try:
+
+            send_admin_notification(
+                booking
+            )
+
+        except Exception as email_error:
+
+            print(
+                "PAY LATER OWNER EMAIL ERROR:",
+                repr(email_error)
+            )
 
 
+        # ----------------------------------------------------
+        # FRIENDLY CONFIRMATION PAGE
+        # ----------------------------------------------------
 
-    cursor.execute(
-        """
-        SELECT *
-        FROM bookings
-        WHERE id=?
-        """,
-        (
-            booking_id,
-        )
-    )
-
-
-    booking = cursor.fetchone()
-
-
-    conn.close()
-
-
-
-    if not booking:
-
-        return "Booking not found"
-
-
-
-    try:
-
-        send_booking_confirmation(
-
-            booking["email"],
-
-            booking["name"],
-
-            booking["lesson_type"],
-
-            booking["package"],
-
-            booking["lesson_date"],
-
-            booking["lesson_time"]
-
+        return render_template(
+            "payment_success.html",
+            booking=booking,
+            payment_method="cash_or_zelle"
         )
 
 
-        send_admin_notification(
-            booking
-        )
+    except Exception as error:
 
+        if conn:
 
-        return """
-
-        <h1>TEST PAYMENT SUCCESS</h1>
-
-        <p>Booking confirmed.</p>
-
-        <a href="/">Return Home</a>
-
-        """
-
-
-
-    except Exception as e:
-
+            conn.rollback()
 
         print(
-            "EMAIL ERROR:",
-            e
+            "PAY LATER ERROR:",
+            repr(error)
         )
 
+        return (
+            "<h2>Unable to Confirm Pay Later</h2>"
+            "<p>"
+            "Please try again or contact Millrod Swim Academy."
+            "</p>"
+        ), 500
 
-        return str(e)
+
+    finally:
+
+        if conn:
+
+            conn.close()
 
 
-
-
-
-# =====================================
+# ============================================================
 # PAYMENT SUCCESS
-# =====================================
+# ============================================================
 
 @payment_bp.route(
-    "/payment-success"
+    "/payment-success",
+    methods=["GET"]
 )
 def payment_success():
-
 
     session_id = request.args.get(
         "session_id"
@@ -433,177 +565,71 @@ def payment_success():
 
     if not session_id:
 
-        return "Invalid payment"
-
+        return render_template(
+            "payment_success.html",
+            booking=None,
+            payment_method="card"
+        )
 
 
     try:
 
-
-        session = stripe.checkout.Session.retrieve(
+        checkout_session = stripe.checkout.Session.retrieve(
             session_id
         )
 
+        booking_id = (
+            checkout_session
+            .get("metadata", {})
+            .get("booking_id")
+        )
 
 
-        if session.payment_status != "paid":
+        if not booking_id:
 
-            return "Payment not completed"
-
-
-
-        booking_id = session.metadata["booking_id"]
-
-
-
-        conn = get_db_connection()
-
-        cursor = conn.cursor()
-
-
-
-        cursor.execute(
-            """
-            UPDATE bookings
-
-            SET
-
-            payment_method='card',
-
-            payment_status='paid',
-
-            status='confirmed',
-
-            stripe_payment_id=?
-
-            WHERE id=?
-
-            """,
-
-            (
-
-                session.id,
-
-                booking_id
-
+            return render_template(
+                "payment_success.html",
+                booking=None,
+                payment_method="card"
             )
 
+
+        booking = get_booking(
+            int(booking_id)
         )
 
 
-
-        conn.commit()
-
-
-
-        cursor.execute(
-            """
-            SELECT *
-            FROM bookings
-            WHERE id=?
-            """,
-            (
-                booking_id,
-            )
+        return render_template(
+            "payment_success.html",
+            booking=booking,
+            payment_method="card"
         )
 
 
-        booking = cursor.fetchone()
-
-
-
-        conn.close()
-
-
-
-        if not booking:
-
-            return "Booking not found"
-
-
-
-        send_booking_confirmation(
-
-            booking["email"],
-
-            booking["name"],
-
-            booking["lesson_type"],
-
-            booking["package"],
-
-            booking["lesson_date"],
-
-            booking["lesson_time"]
-
-        )
-
-
-        send_admin_notification(
-            booking
-        )
-
-
-
-        return """
-
-        <h1>
-        Payment Successful!
-        </h1>
-
-
-        <p>
-        Your swimming lesson is confirmed.
-        </p>
-
-
-        <a href="/">
-        Return Home
-        </a>
-
-        """
-
-
-
-    except Exception as e:
-
+    except Exception as error:
 
         print(
             "PAYMENT SUCCESS ERROR:",
-            e
+            repr(error)
+        )
+
+        return render_template(
+            "payment_success.html",
+            booking=None,
+            payment_method="card"
         )
 
 
-        return "Payment processing error"
-
-
-
-
-
-# =====================================
+# ============================================================
 # PAYMENT CANCEL
-# =====================================
+# ============================================================
 
 @payment_bp.route(
-    "/payment-cancel"
+    "/payment-cancel",
+    methods=["GET"]
 )
 def payment_cancel():
 
-
-    return """
-
-    <h1>
-    Payment Cancelled
-    </h1>
-
-
-    <p>
-    You can return and select another time.
-    </p>
-
-
-    <a href="/">
-    Back
-    </a>
-
-    """
+    return render_template(
+        "payment_cancel.html"
+    )

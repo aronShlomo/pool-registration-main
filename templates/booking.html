@@ -4,9 +4,28 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
-    <title>Book Swimming Lesson | Millrod Swim Academy</title>
+    <title>Book a Swimming Lesson | Millrod Swim Academy</title>
 
-    <!-- Full Calendar -->
+    <meta
+      name="description"
+      content="Request a swimming lesson with Millrod Swim Academy. Choose an available date and time, complete the registration form, and send your request for approval."
+    />
+
+    <meta name="theme-color" content="#0077b6" />
+
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap"
+      rel="stylesheet"
+    />
+
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css"
+    />
+
     <link
       href="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.15/index.global.min.css"
       rel="stylesheet"
@@ -19,117 +38,679 @@
   </head>
 
   <body>
+    <!-- =====================================================
+       HEADER
+  ====================================================== -->
     <header class="booking-header">
-      <h1>🏊 Millrod Swim Academy</h1>
+      <div class="booking-header-inner">
+        <a
+          href="/"
+          class="booking-brand"
+          aria-label="Millrod Swim Academy home"
+        >
+          <span class="booking-brand-icon">🏊</span>
 
-      <p>Book your swimming lesson</p>
+          <span class="booking-brand-copy">
+            <strong>Millrod Swim Academy</strong>
+            <small>Professional Swimming Lessons</small>
+          </span>
+        </a>
+
+        <a href="/" class="back-home">
+          <i class="fa-solid fa-arrow-left"></i>
+          Back to Website
+        </a>
+      </div>
     </header>
 
-    <section class="booking-container">
-      <!-- Calendar -->
+    <main>
+      <!-- ===================================================
+         HERO
+    ==================================================== -->
+      <section class="booking-hero">
+        <div class="booking-hero-inner">
+          <div class="hero-label">
+            <i class="fa-solid fa-water"></i>
+            Swimming Lesson Registration
+          </div>
 
-      <div class="calendar-box">
-        <h2>Select Date</h2>
+          <h1>
+            Reserve Your
+            <span>Swimming Lesson</span>
+          </h1>
 
-        <div id="calendar"></div>
+          <p>
+            Choose an available date and time, tell us about the swimmer, and
+            send your registration to Millrod Swim Academy for approval.
+          </p>
+
+          <div class="hero-benefits">
+            <div>
+              <i class="fa-solid fa-shield-heart"></i>
+              <span>Safety First</span>
+            </div>
+
+            <div>
+              <i class="fa-solid fa-user-check"></i>
+              <span>Personalized Instruction</span>
+            </div>
+
+            <div>
+              <i class="fa-solid fa-lock"></i>
+              <span>Secure Registration</span>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ===================================================
+         PROCESS
+    ==================================================== -->
+      <section class="process-section">
+        <div class="process-container">
+          <div class="process-step active">
+            <div class="process-number">1</div>
+
+            <div>
+              <strong>Choose a Time</strong>
+              <small>Select an available lesson.</small>
+            </div>
+          </div>
+
+          <div class="process-line"></div>
+
+          <div class="process-step">
+            <div class="process-number">2</div>
+
+            <div>
+              <strong>Send for Approval</strong>
+              <small>The academy reviews your request.</small>
+            </div>
+          </div>
+
+          <div class="process-line"></div>
+
+          <div class="process-step">
+            <div class="process-number">3</div>
+
+            <div>
+              <strong>Complete Registration</strong>
+              <small>Pay now or choose Pay Later.</small>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ===================================================
+         BOOKING
+    ==================================================== -->
+      <section class="booking-container">
+        <!-- =================================================
+           CALENDAR CARD
+      ================================================== -->
+        <div class="booking-card calendar-box">
+          <div class="card-header">
+            <div>
+              <span class="step-label">STEP 1</span>
+
+              <h2>Choose Your Date</h2>
+
+              <p>Select an available date from the calendar.</p>
+            </div>
+
+            <div class="availability-status">
+              <span class="availability-dot"></span>
+              Live Availability
+            </div>
+          </div>
+
+          <div
+            id="calendar"
+            class="calendar-container"
+            aria-label="Swimming lesson availability calendar"
+          ></div>
+
+          <div class="calendar-legend">
+            <span>
+              <i class="legend-dot available"></i>
+              Available
+            </span>
+
+            <span>
+              <i class="legend-dot selected"></i>
+              Selected
+            </span>
+
+            <span>
+              <i class="legend-dot booked"></i>
+              Reserved
+            </span>
+          </div>
+
+          <div class="calendar-help">
+            <i class="fa-solid fa-circle-info"></i>
+
+            <span>
+              Select a date first. Available lesson times will then appear in
+              the registration form.
+            </span>
+          </div>
+        </div>
+
+        <!-- =================================================
+           FORM CARD
+      ================================================== -->
+        <div class="booking-card form-box">
+          <div class="card-header">
+            <div>
+              <span class="step-label">STEP 2</span>
+
+              <h2>Lesson Registration</h2>
+
+              <p>Complete the information below to request your lesson.</p>
+            </div>
+          </div>
+
+          <form id="bookingForm" novalidate>
+            <!-- =============================================
+               STUDENT
+          ============================================== -->
+            <div class="form-section">
+              <div class="form-section-header">
+                <div class="form-section-icon">
+                  <i class="fa-solid fa-user"></i>
+                </div>
+
+                <div>
+                  <h3>Student Information</h3>
+                  <p>Tell us about the swimmer.</p>
+                </div>
+              </div>
+
+              <div class="form-grid">
+                <div class="input-group full-width">
+                  <label for="student_name">
+                    Student Full Name <span>*</span>
+                  </label>
+
+                  <input
+                    type="text"
+                    id="student_name"
+                    name="student_name"
+                    placeholder="Enter student's full name"
+                    autocomplete="name"
+                    required
+                  />
+                </div>
+
+                <div class="input-group">
+                  <label for="dob"> Date of Birth <span>*</span> </label>
+
+                  <input type="date" id="dob" name="dob" required />
+                </div>
+
+                <div class="input-group">
+                  <label for="age"> Age <span>*</span> </label>
+
+                  <input
+                    type="number"
+                    id="age"
+                    name="age"
+                    min="1"
+                    max="120"
+                    placeholder="Age"
+                    required
+                  />
+                </div>
+              </div>
+            </div>
+
+            <!-- =============================================
+               PARENT / GUARDIAN
+          ============================================== -->
+            <div class="form-section">
+              <div class="form-section-header">
+                <div class="form-section-icon">
+                  <i class="fa-solid fa-users"></i>
+                </div>
+
+                <div>
+                  <h3>Parent / Guardian</h3>
+                  <p>Your contact information.</p>
+                </div>
+              </div>
+
+              <div class="form-grid">
+                <div class="input-group full-width">
+                  <label for="parent_name">
+                    Parent / Guardian Name <span>*</span>
+                  </label>
+
+                  <input
+                    type="text"
+                    id="parent_name"
+                    name="parent_name"
+                    placeholder="Parent or guardian full name"
+                    required
+                  />
+                </div>
+
+                <div class="input-group">
+                  <label for="email"> Email Address <span>*</span> </label>
+
+                  <input
+                    type="email"
+                    id="email"
+                    name="email"
+                    placeholder="you@example.com"
+                    autocomplete="email"
+                    required
+                  />
+                </div>
+
+                <div class="input-group">
+                  <label for="phone"> Phone Number <span>*</span> </label>
+
+                  <input
+                    type="tel"
+                    id="phone"
+                    name="phone"
+                    placeholder="(555) 555-5555"
+                    autocomplete="tel"
+                    required
+                  />
+                </div>
+              </div>
+            </div>
+
+            <!-- =============================================
+               EMERGENCY CONTACT
+          ============================================== -->
+            <div class="form-section">
+              <div class="form-section-header">
+                <div class="form-section-icon">
+                  <i class="fa-solid fa-phone-volume"></i>
+                </div>
+
+                <div>
+                  <h3>Emergency Contact</h3>
+                  <p>Someone we can reach if necessary.</p>
+                </div>
+              </div>
+
+              <div class="form-grid">
+                <div class="input-group">
+                  <label for="emergency_contact">
+                    Emergency Contact <span>*</span>
+                  </label>
+
+                  <input
+                    type="text"
+                    id="emergency_contact"
+                    name="emergency_contact"
+                    placeholder="Full name"
+                    required
+                  />
+                </div>
+
+                <div class="input-group">
+                  <label for="emergency_phone">
+                    Emergency Phone <span>*</span>
+                  </label>
+
+                  <input
+                    type="tel"
+                    id="emergency_phone"
+                    name="emergency_phone"
+                    placeholder="(555) 555-5555"
+                    required
+                  />
+                </div>
+              </div>
+            </div>
+
+            <!-- =============================================
+               EXPERIENCE
+          ============================================== -->
+            <div class="form-section">
+              <div class="form-section-header">
+                <div class="form-section-icon">
+                  <i class="fa-solid fa-water"></i>
+                </div>
+
+                <div>
+                  <h3>Swimming Experience</h3>
+                  <p>Help us prepare the right lesson.</p>
+                </div>
+              </div>
+
+              <div class="input-group">
+                <label for="swimming_experience">
+                  Swimming Experience <span>*</span>
+                </label>
+
+                <textarea
+                  id="swimming_experience"
+                  name="swimming_experience"
+                  rows="4"
+                  placeholder="Tell us about the swimmer's experience and current swimming level."
+                  required
+                ></textarea>
+              </div>
+            </div>
+
+            <!-- =============================================
+               LESSON SELECTION
+          ============================================== -->
+            <div class="form-section">
+              <div class="form-section-header">
+                <div class="form-section-icon">
+                  <i class="fa-solid fa-person-swimming"></i>
+                </div>
+
+                <div>
+                  <h3>Lesson Selection</h3>
+                  <p>Choose the lesson type and package.</p>
+                </div>
+              </div>
+
+              <div class="form-grid">
+                <div class="input-group">
+                  <label for="lesson_type"> Lesson Type <span>*</span> </label>
+
+                  <select id="lesson_type" name="lesson_type" required>
+                    <option value="">Select lesson type</option>
+
+                    <option value="Private Lesson">Private Lesson</option>
+
+                    <option value="Semi-Private Lesson">
+                      Semi-Private Lesson
+                    </option>
+
+                    <option value="Group Lesson">Group Lesson</option>
+                  </select>
+                </div>
+
+                <div class="input-group">
+                  <label for="package"> Package <span>*</span> </label>
+
+                  <select id="package" name="package" required>
+                    <option value="">Select package</option>
+
+                    <option value="Single Lesson">Single Lesson</option>
+
+                    <option value="4 Lessons Package">4 Lessons Package</option>
+
+                    <option value="8 Lessons Package">8 Lessons Package</option>
+
+                    <option value="Monthly Program">Monthly Program</option>
+                  </select>
+                </div>
+              </div>
+
+              <div class="price-preview" id="pricePreview">
+                <div class="price-preview-icon">
+                  <i class="fa-solid fa-tag"></i>
+                </div>
+
+                <div>
+                  <span>Lesson Price</span>
+
+                  <strong id="priceDisplay">
+                    Select a lesson and package
+                  </strong>
+                </div>
+              </div>
+            </div>
+
+            <!-- =============================================
+               DATE / TIME
+          ============================================== -->
+            <div class="form-section">
+              <div class="form-section-header">
+                <div class="form-section-icon">
+                  <i class="fa-solid fa-calendar-days"></i>
+                </div>
+
+                <div>
+                  <h3>Lesson Schedule</h3>
+                  <p>Confirm your selected date and available time.</p>
+                </div>
+              </div>
+
+              <div class="form-grid">
+                <div class="input-group">
+                  <label for="lesson_date">
+                    Selected Date <span>*</span>
+                  </label>
+
+                  <input
+                    type="date"
+                    id="lesson_date"
+                    name="lesson_date"
+                    readonly
+                    required
+                  />
+                </div>
+
+                <div class="input-group">
+                  <label for="lesson_time">
+                    Available Time <span>*</span>
+                  </label>
+
+                  <select id="lesson_time" name="lesson_time" required>
+                    <option value="">Select a date first</option>
+                  </select>
+                </div>
+              </div>
+            </div>
+
+            <!-- =============================================
+               ADDITIONAL INFORMATION
+          ============================================== -->
+            <div class="form-section">
+              <div class="form-section-header">
+                <div class="form-section-icon">
+                  <i class="fa-solid fa-note-sticky"></i>
+                </div>
+
+                <div>
+                  <h3>Additional Information</h3>
+                  <p>Optional information for the instructor.</p>
+                </div>
+              </div>
+
+              <div class="input-group">
+                <label for="medical"> Medical Conditions / Allergies </label>
+
+                <textarea
+                  id="medical"
+                  name="medical"
+                  rows="3"
+                  placeholder="Optional — tell us about any relevant medical conditions or allergies."
+                ></textarea>
+              </div>
+
+              <div class="input-group">
+                <label for="notes"> Additional Notes </label>
+
+                <textarea
+                  id="notes"
+                  name="notes"
+                  rows="3"
+                  placeholder="Optional — goals, special requests, or anything else you'd like us to know."
+                ></textarea>
+              </div>
+            </div>
+
+            <!-- =============================================
+               APPROVAL WORKFLOW
+          ============================================== -->
+            <div class="approval-notice">
+              <div class="approval-notice-icon">
+                <i class="fa-solid fa-paper-plane"></i>
+              </div>
+
+              <div>
+                <strong> Your registration is sent for approval first. </strong>
+
+                <p>
+                  Submitting this form does not charge you. The academy will
+                  review your request before the lesson is confirmed.
+                </p>
+
+                <p>
+                  If approved, you will receive an email with
+                  <strong>Pay Now</strong> or
+                  <strong>Pay Later</strong> options.
+                </p>
+              </div>
+            </div>
+
+            <!-- =============================================
+               AGREEMENT
+          ============================================== -->
+            <label class="agreement-row">
+              <input
+                type="checkbox"
+                id="registrationAgreement"
+                name="registrationAgreement"
+                required
+              />
+
+              <span>
+                I confirm that the information provided is accurate and I would
+                like to send this registration to Millrod Swim Academy for
+                approval.
+              </span>
+            </label>
+
+            <!-- =============================================
+               MESSAGE
+          ============================================== -->
+            <div
+              id="bookingMessage"
+              class="booking-message"
+              role="alert"
+              aria-live="polite"
+            ></div>
+
+            <!-- =============================================
+               SEND FOR APPROVAL
+          ============================================== -->
+            <button
+              type="button"
+              id="sendApprovalBtn"
+              class="submit-booking-btn"
+            >
+              <span class="button-text">
+                <i class="fa-solid fa-paper-plane"></i>
+                Send Registration for Approval
+              </span>
+
+              <span class="button-loading" hidden>
+                <i class="fa-solid fa-spinner fa-spin"></i>
+                Sending Registration...
+              </span>
+            </button>
+
+            <div class="secure-note">
+              <i class="fa-solid fa-lock"></i>
+
+              <span>
+                Your information is securely submitted for registration review.
+              </span>
+            </div>
+          </form>
+        </div>
+      </section>
+
+      <!-- ===================================================
+         SUCCESS MODAL
+    ==================================================== -->
+      <div id="successModal" class="modal" aria-hidden="true">
+        <div class="modal-overlay" data-close-modal></div>
+
+        <div
+          class="modal-card"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="successTitle"
+        >
+          <button
+            type="button"
+            class="modal-close"
+            id="closeSuccessModal"
+            aria-label="Close confirmation"
+          >
+            <i class="fa-solid fa-xmark"></i>
+          </button>
+
+          <div class="success-icon">
+            <i class="fa-solid fa-check"></i>
+          </div>
+
+          <span class="hero-label"> Registration Submitted </span>
+
+          <h2 id="successTitle">Thank You!</h2>
+
+          <p>
+            Your swimming lesson request has been successfully sent to Millrod
+            Swim Academy for review.
+          </p>
+
+          <div class="success-summary">
+            <strong> What happens next? </strong>
+
+            <ol>
+              <li>The academy reviews your registration.</li>
+
+              <li>You receive an email with the approval decision.</li>
+
+              <li>
+                If approved, your email includes
+                <strong>Pay Now</strong> and <strong>Pay Later</strong>.
+              </li>
+            </ol>
+          </div>
+
+          <p class="success-small">
+            Please check your email for updates from Millrod Swim Academy.
+          </p>
+
+          <button type="button" id="successDoneBtn" class="done-btn">
+            Done
+          </button>
+        </div>
+      </div>
+    </main>
+
+    <!-- =====================================================
+       FOOTER
+  ====================================================== -->
+    <footer class="booking-footer">
+      <div class="footer-brand">
+        <strong>🏊 Millrod Swim Academy</strong>
+
+        <span> Professional Swimming Lessons </span>
       </div>
 
-      <!-- Booking Form -->
+      <div class="footer-links">
+        <a href="/">
+          <i class="fa-solid fa-house"></i>
+          Website
+        </a>
 
-      <div class="form-box">
-        <h2>Lesson Registration</h2>
-
-        <form id="bookingForm">
-          <div class="input-group">
-            <label> First Name </label>
-
-            <input type="text" name="first_name" required />
-          </div>
-
-          <div class="input-group">
-            <label> Last Name </label>
-
-            <input type="text" name="last_name" required />
-          </div>
-
-          <div class="input-group">
-            <label> Email </label>
-
-            <input type="email" name="email" required />
-          </div>
-
-          <div class="input-group">
-            <label> Phone </label>
-
-            <input type="tel" name="phone_number" />
-          </div>
-
-          <div class="input-group">
-            <label> Lesson Type </label>
-
-            <select id="lesson_type" name="lesson_type" required>
-              <option value="">Select lesson</option>
-
-              <option value="Private Lesson">Private Lesson</option>
-
-              <option value="Semi Private Lesson">Semi Private Lesson</option>
-
-              <option value="Kids Swimming Lesson">Kids Swimming Lesson</option>
-            </select>
-          </div>
-
-          <div class="input-group">
-            <label> Package </label>
-
-            <select id="package" name="package" required>
-              <option value="">Select package</option>
-
-              <option value="Single Lesson">Single Lesson</option>
-
-              <option value="5 Lessons Package">5 Lessons Package</option>
-
-              <option value="10 Lessons Package">10 Lessons Package</option>
-            </select>
-          </div>
-
-          <div class="input-group">
-            <label> Date </label>
-
-            <input type="date" id="lesson_date" name="lesson_date" required />
-          </div>
-
-          <div class="input-group">
-            <label> Time </label>
-
-            <select id="lesson_time" name="lesson_time" required>
-              <option value="">Select time</option>
-
-              <option value="09:00">09:00 AM</option>
-
-              <option value="10:00">10:00 AM</option>
-
-              <option value="11:00">11:00 AM</option>
-
-              <option value="12:00">12:00 PM</option>
-
-              <option value="13:00">01:00 PM</option>
-
-              <option value="14:00">02:00 PM</option>
-
-              <option value="15:00">03:00 PM</option>
-
-              <option value="16:00">04:00 PM</option>
-
-              <option value="17:00">05:00 PM</option>
-            </select>
-          </div>
-
-          <button type="button" id="sendApprovalBtn">Send for approval</button>
-
-          <div id="bookingMessage"></div>
-        </form>
+        <a href="mailto:themillrodswim@gmail.com">
+          <i class="fa-solid fa-envelope"></i>
+          Contact
+        </a>
       </div>
-    </section>
+    </footer>
+
+    <!-- =====================================================
+       SCRIPTS
+  ====================================================== -->
 
     <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.15/index.global.min.js"></script>
 

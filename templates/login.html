@@ -111,3 +111,658 @@
     </div>
   </body>
 </html>
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+    <meta
+      name="description"
+      content="Millrod Swim Academy secure administrator login"
+    />
+
+    <title>Millrod Swim Academy | Admin Login</title>
+
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css"
+    />
+
+    <style>
+      /* =====================================================
+         GLOBAL
+      ===================================================== */
+
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+
+      html,
+      body {
+        width: 100%;
+        min-height: 100%;
+      }
+
+      body {
+        min-height: 100vh;
+
+        display: flex;
+        align-items: center;
+        justify-content: center;
+
+        padding: 25px;
+
+        font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+
+        color: #243447;
+
+        background:
+          radial-gradient(
+            circle at top left,
+            rgba(72, 202, 228, 0.25),
+            transparent 35%
+          ),
+          linear-gradient(135deg, #e9f7ff 0%, #f4fbff 50%, #dff3fc 100%);
+      }
+
+      /* =====================================================
+         LOGIN WRAPPER
+      ===================================================== */
+
+      .login-wrapper {
+        width: 100%;
+        max-width: 430px;
+      }
+
+      /* =====================================================
+         LOGIN BOX
+      ===================================================== */
+
+      .login-box {
+        position: relative;
+
+        width: 100%;
+
+        padding: 42px 38px 35px;
+
+        background: rgba(255, 255, 255, 0.96);
+
+        border: 1px solid rgba(0, 119, 182, 0.08);
+
+        border-radius: 22px;
+
+        box-shadow: 0 25px 60px rgba(0, 62, 138, 0.15);
+
+        backdrop-filter: blur(12px);
+
+        overflow: hidden;
+      }
+
+      .login-box::before {
+        content: "";
+
+        position: absolute;
+
+        top: 0;
+        left: 0;
+
+        width: 100%;
+        height: 5px;
+
+        background: linear-gradient(90deg, #0077b6, #00b4d8, #48cae4);
+      }
+
+      /* =====================================================
+         LOGO
+      ===================================================== */
+
+      .brand {
+        text-align: center;
+
+        margin-bottom: 30px;
+      }
+
+      .brand-icon {
+        width: 78px;
+        height: 78px;
+
+        margin: 0 auto 15px;
+
+        display: flex;
+
+        align-items: center;
+        justify-content: center;
+
+        border-radius: 50%;
+
+        color: white;
+
+        background: linear-gradient(135deg, #0077b6, #023e8a);
+
+        box-shadow: 0 12px 25px rgba(0, 119, 182, 0.25);
+      }
+
+      .brand-icon i {
+        font-size: 35px;
+      }
+
+      .brand h1 {
+        color: #023e8a;
+
+        font-size: 25px;
+
+        font-weight: 700;
+
+        margin-bottom: 6px;
+      }
+
+      .brand p {
+        color: #718096;
+
+        font-size: 14px;
+      }
+
+      /* =====================================================
+         ERROR MESSAGE
+      ===================================================== */
+
+      .error {
+        display: flex;
+
+        align-items: center;
+
+        gap: 10px;
+
+        padding: 12px 14px;
+
+        margin-bottom: 20px;
+
+        border-radius: 10px;
+
+        border: 1px solid #f5c2c7;
+
+        color: #842029;
+
+        background: #f8d7da;
+
+        font-size: 14px;
+
+        line-height: 1.4;
+      }
+
+      .error i {
+        font-size: 17px;
+
+        flex-shrink: 0;
+      }
+
+      /* =====================================================
+         FORM
+      ===================================================== */
+
+      .login-form {
+        width: 100%;
+      }
+
+      .form-group {
+        margin-bottom: 18px;
+      }
+
+      .form-group label {
+        display: block;
+
+        margin-bottom: 7px;
+
+        color: #34495e;
+
+        font-size: 14px;
+
+        font-weight: 600;
+      }
+
+      .input-wrapper {
+        position: relative;
+      }
+
+      .input-wrapper > i {
+        position: absolute;
+
+        left: 15px;
+        top: 50%;
+
+        transform: translateY(-50%);
+
+        color: #7c91a2;
+
+        font-size: 15px;
+
+        pointer-events: none;
+      }
+
+      input {
+        width: 100%;
+
+        height: 50px;
+
+        padding: 0 45px;
+
+        border: 1px solid #d8e2e9;
+
+        border-radius: 10px;
+
+        background: #fafdff;
+
+        color: #243447;
+
+        font-size: 15px;
+
+        outline: none;
+
+        transition:
+          border-color 0.2s ease,
+          box-shadow 0.2s ease,
+          background 0.2s ease;
+      }
+
+      input::placeholder {
+        color: #9aa9b5;
+      }
+
+      input:hover {
+        border-color: #b9cbd7;
+      }
+
+      input:focus {
+        border-color: #0077b6;
+
+        background: white;
+
+        box-shadow: 0 0 0 4px rgba(0, 119, 182, 0.1);
+      }
+
+      /* =====================================================
+         PASSWORD TOGGLE
+      ===================================================== */
+
+      .password-toggle {
+        position: absolute;
+
+        right: 13px;
+        top: 50%;
+
+        transform: translateY(-50%);
+
+        width: 32px;
+        height: 32px;
+
+        display: flex;
+
+        align-items: center;
+        justify-content: center;
+
+        border: none;
+
+        background: transparent;
+
+        color: #7c91a2;
+
+        cursor: pointer;
+
+        border-radius: 7px;
+
+        transition:
+          color 0.2s ease,
+          background 0.2s ease;
+      }
+
+      .password-toggle:hover {
+        color: #0077b6;
+
+        background: #eaf7fc;
+      }
+
+      /* =====================================================
+         LOGIN BUTTON
+      ===================================================== */
+
+      .login-button {
+        width: 100%;
+
+        min-height: 52px;
+
+        margin-top: 8px;
+
+        display: flex;
+
+        align-items: center;
+        justify-content: center;
+
+        gap: 9px;
+
+        border: none;
+
+        border-radius: 11px;
+
+        color: white;
+
+        background: linear-gradient(135deg, #0077b6, #023e8a);
+
+        font-size: 15px;
+
+        font-weight: 700;
+
+        cursor: pointer;
+
+        box-shadow: 0 8px 18px rgba(0, 119, 182, 0.2);
+
+        transition:
+          transform 0.2s ease,
+          box-shadow 0.2s ease,
+          opacity 0.2s ease;
+      }
+
+      .login-button:hover {
+        transform: translateY(-2px);
+
+        box-shadow: 0 12px 25px rgba(0, 119, 182, 0.28);
+      }
+
+      .login-button:active {
+        transform: translateY(0);
+      }
+
+      .login-button:disabled {
+        opacity: 0.65;
+
+        cursor: not-allowed;
+
+        transform: none;
+      }
+
+      /* =====================================================
+         SECURITY MESSAGE
+      ===================================================== */
+
+      .security-message {
+        display: flex;
+
+        align-items: center;
+        justify-content: center;
+
+        gap: 7px;
+
+        margin-top: 22px;
+
+        color: #8493a0;
+
+        font-size: 12px;
+
+        text-align: center;
+      }
+
+      .security-message i {
+        color: #198754;
+      }
+
+      /* =====================================================
+         FOOTER
+      ===================================================== */
+
+      .login-footer {
+        margin-top: 20px;
+
+        text-align: center;
+
+        color: #91a0ad;
+
+        font-size: 12px;
+      }
+
+      /* =====================================================
+         MOBILE
+      ===================================================== */
+
+      @media (max-width: 480px) {
+        body {
+          padding: 15px;
+        }
+
+        .login-box {
+          padding: 35px 22px 28px;
+
+          border-radius: 18px;
+        }
+
+        .brand-icon {
+          width: 68px;
+          height: 68px;
+        }
+
+        .brand-icon i {
+          font-size: 30px;
+        }
+
+        .brand h1 {
+          font-size: 22px;
+        }
+
+        .brand p {
+          font-size: 13px;
+        }
+
+        input {
+          height: 48px;
+        }
+
+        .login-button {
+          min-height: 50px;
+        }
+      }
+
+      /* =====================================================
+         ACCESSIBILITY
+      ===================================================== */
+
+      button:focus-visible,
+      input:focus-visible {
+        outline: 3px solid rgba(0, 119, 182, 0.2);
+
+        outline-offset: 2px;
+      }
+
+      /* =====================================================
+         REDUCED MOTION
+      ===================================================== */
+
+      @media (prefers-reduced-motion: reduce) {
+        *,
+        *::before,
+        *::after {
+          transition: none !important;
+
+          animation: none !important;
+        }
+      }
+    </style>
+  </head>
+
+  <body>
+    <div class="login-wrapper">
+      <div class="login-box">
+        <!-- =================================================
+             BRAND
+        ================================================== -->
+
+        <div class="brand">
+          <div class="brand-icon">
+            <i class="fas fa-water"></i>
+          </div>
+
+          <h1>Millrod Swim Academy</h1>
+
+          <p>Administrator Portal</p>
+        </div>
+
+        <!-- =================================================
+             ERROR
+        ================================================== -->
+
+        {% if error %}
+
+        <div class="error" role="alert">
+          <i class="fas fa-circle-exclamation"></i>
+
+          <span> {{ error }} </span>
+        </div>
+
+        {% endif %}
+
+        <!-- =================================================
+             LOGIN FORM
+        ================================================== -->
+
+        <form method="POST" class="login-form" id="loginForm">
+          <!-- USERNAME -->
+
+          <div class="form-group">
+            <label for="username"> Username </label>
+
+            <div class="input-wrapper">
+              <i class="fas fa-user"></i>
+
+              <input
+                type="text"
+                id="username"
+                name="username"
+                placeholder="Enter your username"
+                autocomplete="username"
+                required
+                autofocus
+              />
+            </div>
+          </div>
+
+          <!-- PASSWORD -->
+
+          <div class="form-group">
+            <label for="password"> Password </label>
+
+            <div class="input-wrapper">
+              <i class="fas fa-lock"></i>
+
+              <input
+                type="password"
+                id="password"
+                name="password"
+                placeholder="Enter your password"
+                autocomplete="current-password"
+                required
+              />
+
+              <button
+                type="button"
+                class="password-toggle"
+                id="passwordToggle"
+                aria-label="Show password"
+                title="Show password"
+              >
+                <i class="fas fa-eye"></i>
+              </button>
+            </div>
+          </div>
+
+          <!-- LOGIN -->
+
+          <button type="submit" class="login-button" id="loginButton">
+            <i class="fas fa-right-to-bracket"></i>
+
+            <span> Sign In </span>
+          </button>
+        </form>
+
+        <!-- =================================================
+             SECURITY
+        ================================================== -->
+
+        <div class="security-message">
+          <i class="fas fa-shield-halved"></i>
+
+          <span> Secure administrator access </span>
+        </div>
+      </div>
+
+      <!-- ===================================================
+           FOOTER
+      ==================================================== -->
+
+      <div class="login-footer">© 2026 Millrod Swim Academy</div>
+    </div>
+
+    <!-- =====================================================
+         LOGIN JAVASCRIPT
+    ====================================================== -->
+
+    <script>
+      document.addEventListener("DOMContentLoaded", function () {
+        const password = document.getElementById("password");
+
+        const toggle = document.getElementById("passwordToggle");
+
+        const loginForm = document.getElementById("loginForm");
+
+        const loginButton = document.getElementById("loginButton");
+
+        /* ================================================
+             SHOW / HIDE PASSWORD
+          ================================================= */
+
+        if (password && toggle) {
+          toggle.addEventListener("click", function () {
+            const isPassword = password.type === "password";
+
+            password.type = isPassword ? "text" : "password";
+
+            const icon = toggle.querySelector("i");
+
+            if (icon) {
+              icon.className = isPassword ? "fas fa-eye-slash" : "fas fa-eye";
+            }
+
+            toggle.setAttribute(
+              "aria-label",
+              isPassword ? "Hide password" : "Show password",
+            );
+
+            toggle.setAttribute(
+              "title",
+              isPassword ? "Hide password" : "Show password",
+            );
+          });
+        }
+
+        /* ================================================
+             LOGIN BUTTON LOADING
+          ================================================= */
+
+        if (loginForm) {
+          loginForm.addEventListener("submit", function () {
+            if (!loginButton) {
+              return;
+            }
+
+            loginButton.disabled = true;
+
+            loginButton.innerHTML = `
+                  <i class="fas fa-spinner fa-spin"></i>
+                  <span>Signing In...</span>
+                `;
+          });
+        }
+      });
+    </script>
+  </body>
+</html>
